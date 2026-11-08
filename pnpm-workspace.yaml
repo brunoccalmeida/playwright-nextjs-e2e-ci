@@ -5,3 +5,18 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+# monaco-editor pins dompurify exactly, so only an override reaches the patch
+# that fixes GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr. Remove it once a
+# monaco-editor release depends on >=3.4.17.
+overrides:
+  dompurify: 3.4.17
+
+# Accepted risk, tracked in #20. happy-dom comes from @lexical/headless
+# (^20.9.0) and the fix only ships in 21, a major we do not force. It is loaded
+# only by the @lexical/headless/dom export, which neither the app nor any
+# Payload package imports, so the vulnerable code is not reachable.
+audit:
+  ignore:
+    - GHSA-834v-8h66-3h79
+    - GHSA-c8p4-j97h-3vg8
