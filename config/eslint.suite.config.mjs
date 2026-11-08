@@ -23,7 +23,7 @@ export default defineConfig(
     extends: [eslint.configs.recommended, tseslint.configs.strictTypeChecked],
     languageOptions: {
       parserOptions: {
-        project: 'config/tsconfig.suite.json',
+        project: ['config/tsconfig.suite.json', 'config/tsconfig.seed.json'],
         tsconfigRootDir: resolve(import.meta.dirname, '..'),
       },
     },

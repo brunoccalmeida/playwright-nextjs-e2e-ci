@@ -19,6 +19,9 @@
     "../tests/e2e/frontend.e2e.spec.ts",
     "../tests/helpers/login.ts",
     "../tests/helpers/seedUser.ts",
-    "../tests/int/api.int.spec.ts"
+    "../tests/int/api.int.spec.ts",
+    // Imports the app's config and seed, which pulls src/ into this stricter
+    // program. It stays covered by the template's tsconfig.json.
+    "../scripts/seed.ts"
   ]
 }

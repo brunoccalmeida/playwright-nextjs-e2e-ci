@@ -1,0 +1,29 @@
+# Disposable Postgres for local runs. The credentials are local-only and match
+# .env.example. Compose prefers this file over the template's docker-compose.yml,
+# which targets MongoDB and is kept as generated.
+name: playwright-nextjs-e2e-ci
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: payload
+      POSTGRES_PASSWORD: payload
+      POSTGRES_DB: payload
+    ports:
+      # Loopback only: the database is never reachable from the network
+      - '127.0.0.1:5432:5432'
+    volumes:
+      # From version 18 on, the image keeps PGDATA in a versioned subdirectory
+      # of this path, so the mount is the parent and not .../data
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      # -h forces TCP: during first start the image runs a temporary server on
+      # the Unix socket only, which would otherwise report ready too early
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U payload -d payload']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres-data:
