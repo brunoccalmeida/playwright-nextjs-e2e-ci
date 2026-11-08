@@ -45,6 +45,200 @@ jobs:
       - name: Type check, lint, format check and sentinels
         run: pnpm check
 
+  # Production dependencies only, from high severity up: what ships to users.
+  # Accepted exceptions live in audit.ignore (pnpm-workspace.yaml), per GHSA.
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # Reads pnpm-lock.yaml, so no install is needed
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # Lists the commits of the PR to scan
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A secret removed in a later commit is still in the history
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Comments would need pull-requests: write; the failed job is enough
+          GITLEAKS_ENABLE_COMMENTS: false
+
+  workflow-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Audit workflows
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          # Off: SARIF mode never fails the job, and exit codes are the gate
+          advanced-security: false
+          # "latest" would let a new audit fail unrelated PRs
+          version: 1.32.0
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      # Noble, as glibc is required. The tag must match @playwright/test, or the
+      # browsers are not found. The digest pins the content, a tag can move.
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      # 1001 owns the mounted workspace. --init reaps zombie processes and
+      # --ipc=host keeps Chromium from running out of shared memory.
+      options: --user 1001 --init --ipc=host
+    services:
+      postgres:
+        # Same major as compose.yaml; a new database for every job
+        image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+        env:
+          POSTGRES_USER: payload
+          POSTGRES_PASSWORD: payload
+          POSTGRES_DB: payload
+        # -h forces TCP, see compose.yaml. The job only starts once it is healthy.
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U payload -d payload"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      # The job runs in a container, so the service is reached by its label
+      DATABASE_URL: postgresql://payload:payload@postgres:5432/payload
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+    outputs:
+      pages-artifact: ${{ steps.pages-artifact.outcome }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # New values on every run. The published report records requests, so a
+      # token that ends up there must not open anything after this job.
+      - name: Generate disposable secrets
+        run: |
+          for name in PAYLOAD_SECRET CRON_SECRET PREVIEW_SECRET; do
+            value="$(node -p "require('node:crypto').randomBytes(32).toString('hex')")"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Run migrations
+        run: pnpm db:migrate
+
+      # Before the build, so static pages are generated with content
+      - name: Seed the database
+        run: pnpm db:seed
+
+      - name: Build the app
+        run: pnpm build
+
+      - name: Start the app
+        run: nohup pnpm start > server.log 2>&1 &
+
+      # The template's Playwright config starts "pnpm dev" unless a server is
+      # already up, so a dead server must fail here and not be replaced silently.
+      - name: Wait for the app
+        run: |
+          for _ in $(seq 1 60); do
+            if node -e "fetch('http://localhost:3000').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "The app did not answer within 60 seconds" >&2
+          cat server.log >&2
+          exit 1
+
+      # NODE_ENV: the admin spec connects to Payload from the test process, and
+      # outside production the Postgres adapter would push the schema on connect.
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          NODE_ENV: production
+
+      - name: Upload report on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            server.log
+          retention-days: 30
+
+      # Also after a failed run: that is when the report matters most
+      - name: Package report for GitHub Pages
+        id: pages-artifact
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('playwright-report/index.html') != '' }}
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: playwright-report/
+
+  # Outside the ci-passed gate: it only runs on main, after the merge.
+  publish-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [e2e]
+    if: ${{ !cancelled() && needs.e2e.outputs.pages-artifact == 'success' }}
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy report to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
   # The single required check of the ruleset on main. Requiring each job by
   # name would mean editing the ruleset whenever a job is added or renamed;
   # this job's name never changes. always(): a required check that is skipped
@@ -53,7 +247,7 @@ jobs:
   ci-passed:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [check]
+    needs: [check, audit, secret-scan, workflow-audit, e2e]
     if: ${{ always() }}
 
     steps:
