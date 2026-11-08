@@ -161,6 +161,16 @@ Em 08/11/2026: [Payload: migrations](https://payloadcms.com/docs/database/migrat
 | Spec do template   | Spec intacto no build de produção                 | `Received: .../users?depth=1&limit=10`                         |
 | Spec corrigido     | Caminho mutado para `/usersX`                     | `Expected: predicate to succeed`                               |
 
+No CI, com commits-sonda revertidos no próprio PR:
+
+| Sonda                         | Resultado                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `throw` na migration          | `e2e` reprova em `Run migrations` com `PROBE: broken migration`; `ci-passed` em `failure`                     |
+| `throw` no `scripts/seed.ts`  | `e2e` reprova em `Seed the database` com `PROBE: broken seed`; `ci-passed` em `failure`                       |
+| Empacotar relatório em PR     | `Package report` passa no container (`hashFiles` e artifact de 218 KB); `publish-report` rejeitado com `Branch "refs/pull/N/merge" is not allowed to deploy to github-pages` |
+
+Antes do RED do seed houve uma rodada inválida: `git revert -q` não existe, e um `tail` escondeu o erro, então o job ainda reprovava pela sonda da migration. Conferir o **passo** que reprovou é o que separa o motivo certo de um vermelho qualquer.
+
 Comparação da falha do spec: reprovou com `next` 16.3.3 e 16.4.3 em `pnpm start`, e passou em `pnpm dev`. A causa não é a atualização. Depois da correção, `--repeat-each=5 --retries=0` deu 20 de 20 no build de produção.
 
 ### Achados
@@ -179,5 +189,5 @@ Em 08/11/2026: [Playwright: CI](https://playwright.dev/docs/ci), [Docker](https:
 
 - **Aplicado:** o README prometia gitleaks no histórico completo, mas a action varre só o intervalo de commits do PR ou do push (confirmado em `src/gitleaks.js` da v3.0.0). Texto e comentário do workflow corrigidos. O histórico completo foi varrido localmente uma vez (15 commits, sem vazamentos); varredura periódica exigiria um gatilho `schedule`.
 - **Aplicado:** o relatório publicado é o da última execução da `main` que chegou aos testes, não o da última execução.
-- **Aplicado:** o empacotamento para o Pages não rodaria em nenhum PR. Provado no PR com uma sonda (ver a seção do RED no CI).
+- **Aplicado:** o empacotamento para o Pages não rodaria em nenhum PR. Provado com uma sonda, e o deploy real fica para conferir no primeiro run da `main`.
 - **Pendente de decisão do usuário:** alinhar o texto "Um PR aberto por vez" das regras ao combinado de que ele vale para PRs de missão.
