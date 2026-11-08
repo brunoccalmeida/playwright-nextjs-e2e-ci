@@ -1,0 +1,7 @@
+# pnpm 11 no longer reads the "pnpm" field of package.json, and an install
+# fails on any dependency with an unreviewed build script (strictDepBuilds).
+# Same allowlist the template declared there. https://pnpm.io/settings/build
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

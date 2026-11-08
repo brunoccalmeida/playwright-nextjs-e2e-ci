@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: jobs that need more ask for it explicitly
+permissions:
+  contents: read
+
+# A new push to a PR supersedes the run of the previous commit; on main a
+# running run is never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Reads the exact version from "packageManager" in package.json.
+      # Before setup-node, whose pnpm cache needs the pnpm binary.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      # Same Node as local development: one source of truth (.node-version)
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      # Fails if pnpm-lock.yaml and package.json disagree
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check, lint, format check and sentinels
+        run: pnpm check
+
+  # The single required check of the ruleset on main. Requiring each job by
+  # name would mean editing the ruleset whenever a job is added or renamed;
+  # this job's name never changes. always(): a required check that is skipped
+  # counts as passed, so the gate must run, and fail, when a dependency fails
+  # or is cancelled.
+  ci-passed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [check]
+    if: ${{ always() }}
+
+    steps:
+      # Allowlist: only an explicit "success" passes; failure, cancelled and
+      # skipped all fail, because a skipped job tested nothing.
+      - name: Require every job to succeed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
+          jq -e 'length > 0 and all(.[]; .result == "success")' <<< "$NEEDS" > /dev/null
