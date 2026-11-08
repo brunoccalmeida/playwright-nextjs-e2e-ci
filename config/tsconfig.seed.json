@@ -1,0 +1,10 @@
+{
+  // Gives ESLint's type-aware rules a project for scripts/seed.ts, which cannot
+  // join tsconfig.suite.json: it imports src/, written for the template's flags.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": ["../scripts/seed.ts"],
+  "exclude": []
+}
