@@ -55,7 +55,7 @@ Cada sonda reprovou pelo motivo esperado e foi desfeita:
 | Prettier                | `export const x = 1;`                        | Arquivo apontado pelo `--check`                                    |
 | Sentinela known issues  | Cabeçalho `KI-1` só no documento             | `disagree`, `Only in docs/KNOWN_ISSUES.md`                         |
 | Sentinela de regras     | Corpo, caminhos, regra de um lado, 237 linhas | `body differs`, `paths differ`, `Rule sets differ`, `Always-loaded` |
-| `ci-passed` e ruleset   | A registrar no PR da fundação                | Pendente                                                           |
+| `ci-passed` e ruleset   | Commit-sonda com erro de tipo no PR da fundação | `TS2322` no CI, `check` e `ci-passed` em `failure`, PR `BLOCKED`   |
 
 ### Achados
 
@@ -66,6 +66,7 @@ Cada sonda reprovou pelo motivo esperado e foi desfeita:
 - Next.js gerado é 16.3.3 e Playwright 1.63.0.
 - `chat.includeApplyingInstructions` não foi ligado, porque `.vscode/settings.json` é do baseline.
 
+- **Vulnerabilidades do template:** com os alertas ligados, o Dependabot apontou 14 na `main` (4 críticas, 3 altas, 6 moderadas, 1 baixa), em `next` 16.3.3, `sharp` 0.35.4 e `vitest` 4.0.18, todas dependências diretas geradas pelo template. As versões corrigidas chegam até `next` 16.4.1, `sharp` 0.35.5 e `vitest` 4.1.11. Não foram atualizadas aqui: mudam o app sob teste e estão fora do escopo da fundação. O job `audit` da Missão 2 precisa decidir isso, porque reprovaria com elas.
 - Pendência: o `LICENSE` não traz o aviso MIT da Payload, cujo template gerou o app. Precisa virar issue (P2).
 
 ### Revisão independente
