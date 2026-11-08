@@ -20,6 +20,20 @@ Open <http://localhost:3000>. The admin panel is at <http://localhost:3000/admin
 - **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:e2e`, `pnpm test:int`, including the Development section below) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
 - **Start over:** `pnpm db:down` deletes the database, then repeat from `pnpm db:up`.
 
+## Continuous integration
+
+Every pull request runs these jobs, and the `ci-passed` gate requires all of them:
+
+| Job              | What it does                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `check`          | Types, lint, formatting and the repository sentinels (`pnpm check`)                                                 |
+| `audit`          | `pnpm audit --prod --audit-level=high`; accepted exceptions are listed per advisory in `pnpm-workspace.yaml`        |
+| `secret-scan`    | gitleaks over the full history                                                                                      |
+| `workflow-audit` | zizmor over the workflows                                                                                           |
+| `e2e`            | Migrate, seed, build, start and test in the official Playwright container, with a new Postgres and secrets per job |
+
+When `e2e` fails, the HTML report and the server log are attached to the run as an artifact. The report of the latest run on `main` is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
+
 The sections below are the template's original documentation.
 
 This is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website). Use it to power websites, blogs, or portfolios from small to enterprise. This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready website.
