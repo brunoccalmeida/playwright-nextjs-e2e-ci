@@ -10,7 +10,7 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Missão atual     | Missão 2 — CI no GitHub Actions (#3), concluída com o merge do PR da missão                                                                                              |
 | Próxima missão   | Missão 3 — E2E da homepage (#4)                                                                                                                                          |
-| PRs abertos      | Dependabot #12 a #16, à espera de avaliação com o job `e2e` no gate; o #12 precisa da imagem do Playwright atualizada (#21)                                             |
+| PRs abertos      | Dependabot #12 a #16 e #19, à espera de avaliação com o job `e2e` no gate, um por vez; o #19 (`next` 16.4.1) ficou obsoleto com a 16.4.3 da `main`; o #12 precisa da imagem do Playwright atualizada (#21)                                             |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
@@ -148,7 +148,7 @@ Em 08/11/2026: [Payload: migrations](https://payloadcms.com/docs/database/migrat
 - **GitHub Pages:** ativado com origem GitHub Actions, com autorização do usuário. `pages: write` e `id-token: write` ficam só em `publish-report`, que está fora do `ci-passed` porque não roda em PR.
 - **zizmor com `advanced-security: false`:** em SARIF ele nunca reprova por exit code. A versão 1.32.0 está fixada para que uma auditoria nova não reprove PRs sem relação.
 - **Exceção à regra de não tocar nos specs do template:** a asserção de `can navigate to list view` passou de string para predicado sobre `url.pathname`. Está registrada aqui e no commit. A string compara também a query, e a Payload acrescenta `?depth=1&limit=10` com `router.replace`. O app está correto, então `test.fail` com KI seria falso, e excluir o teste por `grep` seria um skip disfarçado. `URLPattern` ficou de fora porque o tipo não existe no TypeScript 5.7.3.
-- **PRs do Dependabot #12 a #16 ficaram abertos:** o verde deles só provava tipos e lint. Combinado com o usuário: "um PR aberto por vez" vale para PRs de missão.
+- **PRs do Dependabot #12 a #16 ficaram abertos:** o verde deles só provava tipos e lint. É uma exceção justificada à regra de um PR aberto por vez, que continua valendo: eles chegaram sozinhos e só podem ser avaliados com o `e2e` no gate. A partir de agora, tratar um por vez.
 - **Regra nova:** em dúvida, consultar as melhores práticas mais modernas antes de sugerir. Pedido do usuário, também no `CLAUDE.md` global e nos outros projetos.
 
 ### Como o RED foi visto
@@ -190,4 +190,4 @@ Em 08/11/2026: [Playwright: CI](https://playwright.dev/docs/ci), [Docker](https:
 - **Aplicado:** o README prometia gitleaks no histórico completo, mas a action varre só o intervalo de commits do PR ou do push (confirmado em `src/gitleaks.js` da v3.0.0). Texto e comentário do workflow corrigidos. O histórico completo foi varrido localmente uma vez (15 commits, sem vazamentos); varredura periódica exigiria um gatilho `schedule`.
 - **Aplicado:** o relatório publicado é o da última execução da `main` que chegou aos testes, não o da última execução.
 - **Aplicado:** o empacotamento para o Pages não rodaria em nenhum PR. Provado com uma sonda, e o deploy real fica para conferir no primeiro run da `main`.
-- **Pendente de decisão do usuário:** alinhar o texto "Um PR aberto por vez" das regras ao combinado de que ele vale para PRs de missão.
+- **Descartado por decisão do usuário:** mudar o texto "Um PR aberto por vez". A regra continua, e as exceções entram pela regra geral de desvio com justificativa registrada.
