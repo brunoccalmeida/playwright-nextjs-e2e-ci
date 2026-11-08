@@ -122,6 +122,14 @@ Clone novo e banco vazio, seguindo o README: 70 s de `install` a `build`. Com `p
 - **Alertas do Dependabot:** 41 abertos em 08/11/2026 (22 no `next`), contra os 14 anotados na Missão 0. Entrada do job `audit` da Missão 2.
 - **O `.env` local existente** pode estar desatualizado frente ao novo `.env.example`; `pnpm env:check` aponta o que ajustar.
 - No PowerShell 5.1, aspas duplas internas de um `--jq` chegam quebradas ao `gh`: usar o Bash para esses comandos.
+- **Tipos gerados divergem do banco:** o `src/payload-types.ts` do baseline declara IDs como `string`, mas com Postgres eles são `number`. Fora de `production` a Payload regenera esse arquivo ao conectar, então ele aparece modificado depois de `pnpm dev` ou `pnpm test*`: não commitar (app congelado). Os testes de API da Missão 5 (#6) devem validar o ID como número.
+- **Entrada da Missão 3 (#4):** o `playwright.config.ts` do template usa `webServer: pnpm dev` com `reuseExistingServer`. A suíte precisa de config própria com `pnpm start`, porque `dev` marca o banco migrado como `dev` (ver a revisão abaixo).
+
+### Revisão independente
+
+- **Aplicado (reproduzido antes de corrigir):** uma conexão fora de `production` grava `dev|-1` em `payload_migrations`, e o `db:migrate` seguinte para no prompt de perda de dados. Sem terminal ele ficou parado até o `timeout` (exit 124), diferente do exit 0 que o revisor deduziu; responder "não" sai sem migrar, segundo o código (não executado). O aviso do README agora cobre `pnpm dev` e `pnpm test*` e diz como recuperar.
+- **Aplicado:** o seed apaga os registros de mídia, não os arquivos, e a Payload renomeia o upload com nome ocupado. Após dois seeds, o banco tinha `image-post1-1.webp` em vez de `image-post1.webp`: uma asserção de `src` passaria num ambiente e falharia em outro. O `scripts/seed.ts` agora limpa `public/media`, que está no `.gitignore`.
+- **Descartado:** nenhum. O revisor não teve `git` nem `gh`, então não viu os corpos dos commits, onde o RED também está registrado.
 
 ### Fontes consultadas
 

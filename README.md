@@ -9,7 +9,7 @@ pnpm install --frozen-lockfile
 cp .env.example .env   # local-only values that match compose.yaml
 pnpm db:up             # starts Postgres and waits until it is healthy
 pnpm db:migrate        # validates the environment and applies the migrations
-pnpm db:seed           # creates the demo content
+pnpm db:seed           # replaces all content and media with the demo content
 pnpm build
 pnpm start
 ```
@@ -17,7 +17,7 @@ pnpm start
 Open <http://localhost:3000>. The admin panel is at <http://localhost:3000/admin>, and the seed creates a demo login: `demo-author@example.com` / `password`.
 
 - **Keep this order.** Static pages are generated during the build, so seeding after it leaves `/posts` empty for up to 10 minutes.
-- **Avoid `pnpm dev` on this database.** Outside production mode the Postgres adapter pushes the schema on connect, and Payload warns against mixing push and migrations in one database.
+- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:e2e`, `pnpm test:int`, including the Development section below) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
 - **Start over:** `pnpm db:down` deletes the database, then repeat from `pnpm db:up`.
 
 The sections below are the template's original documentation.
