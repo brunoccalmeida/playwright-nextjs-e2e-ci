@@ -28,11 +28,11 @@ Every pull request runs these jobs, and the `ci-passed` gate requires all of the
 | ---------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `check`          | Types, lint, formatting and the repository sentinels (`pnpm check`)                                                 |
 | `audit`          | `pnpm audit --prod --audit-level=high`; accepted exceptions are listed per advisory in `pnpm-workspace.yaml`        |
-| `secret-scan`    | gitleaks over the full history                                                                                      |
+| `secret-scan`    | gitleaks over the commits of each pull request and push                                                             |
 | `workflow-audit` | zizmor over the workflows                                                                                           |
 | `e2e`            | Migrate, seed, build, start and test in the official Playwright container, with a new Postgres and secrets per job |
 
-When `e2e` fails, the HTML report and the server log are attached to the run as an artifact. The report of the latest run on `main` is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
+When `e2e` fails, the HTML report and the server log are attached to the run as an artifact. The report of the latest run on `main` that reached the tests is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
 
 The sections below are the template's original documentation.
 

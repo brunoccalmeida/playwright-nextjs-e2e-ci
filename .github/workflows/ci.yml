@@ -81,7 +81,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # A secret removed in a later commit is still in the history
+          # The scan covers the commit range of the PR or push, and it needs
+          # the parent of the first commit, which a shallow clone does not have
           fetch-depth: 0
           persist-credentials: false
 

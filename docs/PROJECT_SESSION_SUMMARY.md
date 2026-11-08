@@ -174,3 +174,10 @@ Comparação da falha do spec: reprovou com `next` 16.3.3 e 16.4.3 em `pnpm star
 ### Fontes consultadas
 
 Em 08/11/2026: [Playwright: CI](https://playwright.dev/docs/ci), [Docker](https://playwright.dev/docs/docker), [PageAssertions](https://playwright.dev/docs/api/class-pageassertions), [boas práticas](https://playwright.dev/docs/best-practices), [anotações](https://playwright.dev/docs/test-annotations) e [trace viewer](https://playwright.dev/docs/trace-viewer); [pnpm audit](https://pnpm.io/cli/audit); [OWASP: dependências vulneráveis](https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html); [GitHub Pages com workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [segurança no Actions](https://docs.github.com/en/actions/reference/security/secure-use); [gitleaks-action](https://github.com/gitleaks/gitleaks-action); [zizmor](https://docs.zizmor.sh/usage/); [URLPattern na MDN](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern).
+
+### Revisão independente
+
+- **Aplicado:** o README prometia gitleaks no histórico completo, mas a action varre só o intervalo de commits do PR ou do push (confirmado em `src/gitleaks.js` da v3.0.0). Texto e comentário do workflow corrigidos. O histórico completo foi varrido localmente uma vez (15 commits, sem vazamentos); varredura periódica exigiria um gatilho `schedule`.
+- **Aplicado:** o relatório publicado é o da última execução da `main` que chegou aos testes, não o da última execução.
+- **Aplicado:** o empacotamento para o Pages não rodaria em nenhum PR. Provado no PR com uma sonda (ver a seção do RED no CI).
+- **Pendente de decisão do usuário:** alinhar o texto "Um PR aberto por vez" das regras ao combinado de que ele vale para PRs de missão.
