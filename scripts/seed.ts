@@ -42,7 +42,6 @@ function withoutRevalidation(base: SanitizedConfig): SanitizedConfig {
 }
 
 parseEnv()
-throw new Error('PROBE: broken seed')
 
 // The seed clears the media records but not their files, and Payload renames an
 // upload whose name is taken, so filenames would change on every run.
