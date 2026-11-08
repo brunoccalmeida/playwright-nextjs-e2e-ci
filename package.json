@@ -22,8 +22,8 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p config/tsconfig.suite.json",
     "lint:suite": "eslint --config config/eslint.suite.config.mjs --max-warnings=0 scripts tests",
-    "format": "prettier --write .claude .github config scripts CLAUDE.md pnpm-workspace.yaml \"tests/**\" \"!tests/e2e/*.e2e.spec.ts\" \"!tests/helpers/**\" \"!tests/int/**\"",
-    "format:check": "prettier --check .claude .github config scripts CLAUDE.md pnpm-workspace.yaml \"tests/**\" \"!tests/e2e/*.e2e.spec.ts\" \"!tests/helpers/**\" \"!tests/int/**\"",
+    "format": "prettier --write .claude .github config scripts CLAUDE.md pnpm-workspace.yaml \"tests/**\" \"!tests/e2e/admin.e2e.spec.ts\" \"!tests/e2e/frontend.e2e.spec.ts\" \"!tests/helpers/login.ts\" \"!tests/helpers/seedUser.ts\" \"!tests/int/api.int.spec.ts\"",
+    "format:check": "prettier --check .claude .github config scripts CLAUDE.md pnpm-workspace.yaml \"tests/**\" \"!tests/e2e/admin.e2e.spec.ts\" \"!tests/e2e/frontend.e2e.spec.ts\" \"!tests/helpers/login.ts\" \"!tests/helpers/seedUser.ts\" \"!tests/int/api.int.spec.ts\"",
     "check:known-issues": "tsx scripts/check-known-issues.ts",
     "check:agent-rules": "tsx scripts/check-agent-rules.ts",
     "check": "pnpm run typecheck && pnpm run lint:suite && pnpm run format:check && pnpm run check:known-issues && pnpm run check:agent-rules"

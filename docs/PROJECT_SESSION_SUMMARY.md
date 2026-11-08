@@ -51,7 +51,7 @@ Cada sonda reprovou pelo motivo esperado e foi desfeita:
 | `tsc` (template)        | `const n: number = 'x'`                      | `TS2322`                                                           |
 | `tsc` (suíte)           | `a[0]` em `string`, aceito pelo do template  | `TS2322: 'string \| undefined'`                                    |
 | ESLint                  | `waitForTimeout` e promise sem `await`       | `playwright/no-wait-for-timeout`, `no-floating-promises`           |
-| ESLint (exclusão)       | Violação dentro de `tests/int/`              | Passa: gerados ficam fora                                          |
+| Exclusões por nome      | Arquivos novos em `tests/e2e`, `helpers`, `int` | ESLint, `tsc` da suíte e Prettier reprovam: só os gerados ficam fora |
 | Prettier                | `export const x = 1;`                        | Arquivo apontado pelo `--check`                                    |
 | Sentinela known issues  | Cabeçalho `KI-1` só no documento             | `disagree`, `Only in docs/KNOWN_ISSUES.md`                         |
 | Sentinela de regras     | Corpo, caminhos, regra de um lado, 237 linhas | `body differs`, `paths differ`, `Rule sets differ`, `Always-loaded` |
@@ -65,6 +65,13 @@ Cada sonda reprovou pelo motivo esperado e foi desfeita:
 - `legacy-peer-deps` do `.npmrc` não é lido pelo pnpm 11; `enable-pre-post-scripts` também não, e o padrão atual já roda o `postbuild` (confirmar na Missão 2).
 - Next.js gerado é 16.3.3 e Playwright 1.63.0.
 - `chat.includeApplyingInstructions` não foi ligado, porque `.vscode/settings.json` é do baseline.
+
+- Pendência: o `LICENSE` não traz o aviso MIT da Payload, cujo template gerou o app. Precisa virar issue (P2).
+
+### Revisão independente
+
+- **Aplicado:** exclusões de `tests/` trocadas de curinga por nome de arquivo, em `format`, `format:check`, ESLint e `tsconfig.suite.json`. Com curinga, specs e helpers novos ficariam sem portão, em silêncio.
+- **Descartado por ora:** `anchor()` em `tests/known-issues.ts` remove `_`, e o GitHub pode mantê-lo nas âncoras. Não foi possível confirmar (a API de Markdown não retorna âncoras) e o mapa está vazio. Reavaliar ao criar um KI com `_` no título.
 
 ### Fontes consultadas
 

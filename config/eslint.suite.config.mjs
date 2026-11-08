@@ -13,8 +13,9 @@ export default defineConfig(
     ignores: [
       'tests/e2e/admin.e2e.spec.ts',
       'tests/e2e/frontend.e2e.spec.ts',
-      'tests/helpers/**',
-      'tests/int/**',
+      'tests/helpers/login.ts',
+      'tests/helpers/seedUser.ts',
+      'tests/int/api.int.spec.ts',
     ],
   },
   {
