@@ -11,8 +11,11 @@ import { parseEnv } from './env'
 
 // The revalidation hooks call next/cache, which only works inside a Next.js
 // request, and the template's seed disables them on just some of its writes.
-function disableRevalidate({ req }: { req: PayloadRequest }): void {
+// beforeChange runs ahead of those afterChange hooks, and it is one of the hook
+// lists Payload initializes on both collections and globals at runtime.
+function disableRevalidate<T>({ data, req }: { data: T; req: PayloadRequest }): T {
   req.context.disableRevalidate = true
+  return data
 }
 
 function withoutRevalidation(base: SanitizedConfig): SanitizedConfig {
@@ -24,7 +27,7 @@ function withoutRevalidation(base: SanitizedConfig): SanitizedConfig {
     ...entity,
     hooks: {
       ...entity.hooks,
-      beforeOperation: [disableRevalidate, ...entity.hooks.beforeOperation],
+      beforeChange: [disableRevalidate, ...entity.hooks.beforeChange],
     },
   })
 
