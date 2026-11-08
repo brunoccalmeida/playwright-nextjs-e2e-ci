@@ -8,14 +8,14 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 1 — Ambiente local reproduzível (#2), concluída com o merge do PR da missão                                                                                       |
-| Próxima missão   | Missão 2 — CI no GitHub Actions (#3)                                                                                                                                     |
-| PRs abertos      | nenhum após o merge (Dependabot pode abrir outros: tratar no início do chat)                                                                                             |
+| Missão atual     | Missão 2 — CI no GitHub Actions (#3), concluída com o merge do PR da missão                                                                                              |
+| Próxima missão   | Missão 3 — E2E da homepage (#4)                                                                                                                                          |
+| PRs abertos      | Dependabot #12 a #16 e #19, à espera de avaliação com o job `e2e` no gate, um por vez; o #19 (`next` 16.4.1) ficou obsoleto com a 16.4.3 da `main`; o #12 precisa da imagem do Playwright atualizada (#21)                                             |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
-| Portões          | `pnpm check` (job `check`): `tsc` com o config do template e o da suíte, ESLint da suíte, Prettier da suíte e as sentinelas de known issues e de regras; `ci-passed` no ruleset |
+| Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | Só os gerados pelo template; a suíte começa na Missão 3                                                                                                                  |
+| Testes           | Os 4 E2E do template rodam no CI contra o build de produção; a suíte própria começa na Missão 3                                                                          |
 
 ## Plano de missões
 
@@ -134,3 +134,60 @@ Clone novo e banco vazio, seguindo o README: 70 s de `install` a `build`. Com `p
 ### Fontes consultadas
 
 Em 08/11/2026: [Payload: migrations](https://payloadcms.com/docs/database/migrations), [Postgres](https://payloadcms.com/docs/database/postgres) e [Local API fora do Next.js](https://payloadcms.com/docs/local-api/outside-nextjs); [imagem `postgres`](https://hub.docker.com/_/postgres); [Compose application model](https://docs.docker.com/compose/intro/compose-application-model/); [pnpm install](https://pnpm.io/cli/install); [comandos do Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-pull-request-comment-commands). Comportamento do `push` conferido em `@payloadcms/db-postgres/dist/connect.js`.
+
+## Missão 2 (#3)
+
+### Decisões
+
+- **`audit` bloqueante, em `--prod --audit-level=high`.** Dos 10 alertas que reprovavam: `next` foi a 16.4.3 e `sharp` a 0.35.5 (o peer da Payload aceita), `dompurify` a 3.4.17 por `overrides` (o `monaco-editor` fixa a versão exata). O corte em produção e `high` é julgamento nosso: a OWASP não trata de reprovar build. Os alertas de desenvolvimento, como os do `vitest`, seguem no Dependabot.
+- **Exceção por GHSA só para o `happy-dom`** (`audit.ignore`, #20). A correção exige a versão 21, e o `@lexical/headless` pede `^20.9.0`. O código não é alcançável: só o export `./dom` carrega o `happy-dom`, e nem `src/` nem os pacotes da Payload o importam. Risco aceito pelo usuário.
+- **Job `e2e` em container com serviço Postgres.** Usa `--user 1001` (exemplo oficial do Playwright), `--init` e `--ipc=host`. As imagens ficam fixadas por digest, e o hostname do banco é o rótulo do serviço.
+- **Segredos gerados por execução.** O relatório grava requisições e fica público na `main`, então um token que apareça lá precisa morrer com o job. O `secret-scan` não olha o relatório.
+- **`NODE_ENV=production` no passo de teste.** O spec de admin conecta à Payload pelo processo do teste, e fora de produção o adaptador faria `push` no banco migrado.
+- **Servidor iniciado antes do Playwright.** A config do template sobe `pnpm dev` se não achar servidor, por isso o passo de espera reprova antes: um `start` morto não pode ser trocado em silêncio pelo `dev`. A config própria continua sendo a entrada da Missão 3.
+- **GitHub Pages:** ativado com origem GitHub Actions, com autorização do usuário. `pages: write` e `id-token: write` ficam só em `publish-report`, que está fora do `ci-passed` porque não roda em PR.
+- **zizmor com `advanced-security: false`:** em SARIF ele nunca reprova por exit code. A versão 1.32.0 está fixada para que uma auditoria nova não reprove PRs sem relação.
+- **Exceção à regra de não tocar nos specs do template:** a asserção de `can navigate to list view` passou de string para predicado sobre `url.pathname`. Está registrada aqui e no commit. A string compara também a query, e a Payload acrescenta `?depth=1&limit=10` com `router.replace`. O app está correto, então `test.fail` com KI seria falso, e excluir o teste por `grep` seria um skip disfarçado. `URLPattern` ficou de fora porque o tipo não existe no TypeScript 5.7.3.
+- **PRs do Dependabot #12 a #16 ficaram abertos:** o verde deles só provava tipos e lint. É uma exceção justificada à regra de um PR aberto por vez, que continua valendo: eles chegaram sozinhos e só podem ser avaliados com o `e2e` no gate. A partir de agora, tratar um por vez.
+- **Regra nova:** em dúvida, consultar as melhores práticas mais modernas antes de sugerir. Pedido do usuário, também no `CLAUDE.md` global e nos outros projetos.
+
+### Como o RED foi visto
+
+| Alvo               | Sonda                                             | Erro observado                                                 |
+| ------------------ | ------------------------------------------------- | -------------------------------------------------------------- |
+| `audit`            | Estado da `main`                                  | Exit 1 com 10 alertas `high` ou `critical`                     |
+| `workflow-audit`   | `pull_request_target`, action sem pin e injeção   | Exit 14: `dangerous-triggers`, `template-injection`, `unpinned-uses` |
+| `secret-scan`      | Token do GitHub plantado fora do repositório      | Exit 1, `leaks found: 1`                                       |
+| Spec do template   | Spec intacto no build de produção                 | `Received: .../users?depth=1&limit=10`                         |
+| Spec corrigido     | Caminho mutado para `/usersX`                     | `Expected: predicate to succeed`                               |
+
+No CI, com commits-sonda revertidos no próprio PR:
+
+| Sonda                         | Resultado                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `throw` na migration          | `e2e` reprova em `Run migrations` com `PROBE: broken migration`; `ci-passed` em `failure`                     |
+| `throw` no `scripts/seed.ts`  | `e2e` reprova em `Seed the database` com `PROBE: broken seed`; `ci-passed` em `failure`                       |
+| Empacotar relatório em PR     | `Package report` passa no container (`hashFiles` e artifact de 218 KB); `publish-report` rejeitado com `Branch "refs/pull/N/merge" is not allowed to deploy to github-pages` |
+
+Antes do RED do seed houve uma rodada inválida: `git revert -q` não existe, e um `tail` escondeu o erro, então o job ainda reprovava pela sonda da migration. Conferir o **passo** que reprovou é o que separa o motivo certo de um vermelho qualquer.
+
+Comparação da falha do spec: reprovou com `next` 16.3.3 e 16.4.3 em `pnpm start`, e passou em `pnpm dev`. A causa não é a atualização. Depois da correção, `--repeat-each=5 --retries=0` deu 20 de 20 no build de produção.
+
+### Achados
+
+- **A imagem do Playwright não acompanha o pacote sozinha:** o Dependabot sobe `@playwright/test`, mas não o digest no workflow. O #12 leva a 1.64.1 e vai reprovar no `e2e` até a imagem ser atualizada (#21).
+- **`pnpm dev` esconde a falha do spec de lista**, provavelmente porque a asserção é satisfeita antes do `router.replace` (inferência, tempo não medido). Testar só em `dev` teria deixado passar.
+- **O seed depende de `raw.githubusercontent.com`:** se o download falhar, o job reprova nesse passo, de forma visível. Sem retry por ora (YAGNI); reavaliar se houver intermitência real.
+- **Docker Desktop no Windows:** o bind mount de um arquivo recém-criado apareceu como diretório no container. Montar a pasta resolve.
+- A imagem do Playwright não traz `xz`.
+
+### Fontes consultadas
+
+Em 08/11/2026: [Playwright: CI](https://playwright.dev/docs/ci), [Docker](https://playwright.dev/docs/docker), [PageAssertions](https://playwright.dev/docs/api/class-pageassertions), [boas práticas](https://playwright.dev/docs/best-practices), [anotações](https://playwright.dev/docs/test-annotations) e [trace viewer](https://playwright.dev/docs/trace-viewer); [pnpm audit](https://pnpm.io/cli/audit); [OWASP: dependências vulneráveis](https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html); [GitHub Pages com workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [segurança no Actions](https://docs.github.com/en/actions/reference/security/secure-use); [gitleaks-action](https://github.com/gitleaks/gitleaks-action); [zizmor](https://docs.zizmor.sh/usage/); [URLPattern na MDN](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern).
+
+### Revisão independente
+
+- **Aplicado:** o README prometia gitleaks no histórico completo, mas a action varre só o intervalo de commits do PR ou do push (confirmado em `src/gitleaks.js` da v3.0.0). Texto e comentário do workflow corrigidos. O histórico completo foi varrido localmente uma vez (15 commits, sem vazamentos); varredura periódica exigiria um gatilho `schedule`.
+- **Aplicado:** o relatório publicado é o da última execução da `main` que chegou aos testes, não o da última execução.
+- **Aplicado:** o empacotamento para o Pages não rodaria em nenhum PR. Provado com uma sonda, e o deploy real fica para conferir no primeiro run da `main`.
+- **Descartado por decisão do usuário:** mudar o texto "Um PR aberto por vez". A regra continua, e as exceções entram pela regra geral de desvio com justificativa registrada.
