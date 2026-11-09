@@ -19,7 +19,7 @@ export default defineConfig(
     ],
   },
   {
-    files: ['scripts/**/*.ts', 'tests/**/*.ts'],
+    files: ['config/**/*.ts', 'scripts/**/*.ts', 'tests/**/*.ts'],
     extends: [eslint.configs.recommended, tseslint.configs.strictTypeChecked],
     languageOptions: {
       parserOptions: {
