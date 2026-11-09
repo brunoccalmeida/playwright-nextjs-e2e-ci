@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Skills das fontes de melhores práticas (#25), concluída com o merge do PR da missão |
-| Próxima missão   | #31 (números do README em sincronia), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a 3.93.0 ainda é a mais recente) |
+| Missão atual     | Números do README em sincronia (#31), concluída com o merge do PR da missão |
+| Próxima missão   | #32 (deadlock ao repetir o `db:seed`), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a mais recente ainda fixa o Lexical em 0.50.0) |
 | PRs abertos      | Dependabot #13 a #16, #23 e #36, à espera de avaliação um por vez; o #36 substituiu o #24 e sobe o Playwright para 1.64.1; o `check` dele reprova pela sentinela (#21), que indica a imagem a usar, e o `e2e` por `Executable doesn't exist` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -446,7 +446,7 @@ Em 08/11/2026: GitLab: [serviço PostgreSQL](https://docs.gitlab.com/ci/services
 - **Papel (51/100):** QA Automation Engineer (personal portfolio project)
 - **Por que "62" e "issues":** o relatório público mostra `All 62`, porque conta o `setup` de login; os "61" da tabela de estado são sem ele. "Issues", e não "bugs", porque KI-3 e KI-4 são achados do axe, e o KI-4 quase não tem efeito prático (o Tab não sai do popup); o KI-5 vem de uma regra deliberada.
 - **Descrição (534/600):** Personal project, not client work. Playwright + TypeScript suite for the official Payload CMS website template: 62 tests covering the REST API contract, accessibility (axe, WCAG 2.2 AA), keyboard use, a mobile viewport and an admin-to-frontend journey, on the production build with a new Postgres per CI run. It found 7 real issues, each documented and pinned by a test. Runs on GitHub Actions behind 5 quality gates; its E2E job also passed on GitLab CI. Public report and evidence: github.com/brunoccalmeida/playwright-nextjs-e2e-ci
-- **Pendência do usuário:** publicar o item no perfil. O texto e as imagens estão prontos; nada foi enviado ao Upwork.
+- **Publicado pelo usuário em 09/11/2026.** O agente não enviou nada ao Upwork.
 - **Skills:** Playwright, TypeScript, GitHub Actions, GitLab CI, Accessibility Testing. Os nomes exatos dependem da lista do formulário.
 - **Mídia:** `docs/images/report.png` (capa), `pipeline-github.png`, `pipeline-gitlab.png` e o link do repositório.
 
@@ -516,7 +516,7 @@ Validação: `pnpm check` verde e, com `CI=1`, banco novo e `.next` limpo, 63 de
 - **`tail` escondeu a causa outra vez:** o primeiro erro do seed se perdeu com `tail -3`. Log em arquivo resolveu na ocorrência seguinte.
 - **Deadlock ao repetir o seed (#32):** `Promise.all` no seed congelado do template. Não afeta o CI, cujo banco nasce vazio.
 - **`.next/cache` guarda dados de um build ruim:** build após seed quebrado grava o header vazio, e o build seguinte reaproveita. Três testes reprovaram por falta do link `Posts`, com o banco correto. Remover `.next` resolveu. Validar sempre com `.next` limpo, como o CI.
-- **Pendência do usuário, Upwork:** o texto preparado na Missão 8 cita 62 testes e 7 problemas. Depois deste merge são 63 e 8; ajustar antes de publicar.
+- **Upwork:** o texto preparado na Missão 8 citava 62 testes e 7 problemas, e depois deste merge passaram a 63 e 8. O item foi publicado pelo usuário em 09/11/2026 (ver a Missão 8).
 
 ### Fontes consultadas
 
@@ -662,3 +662,47 @@ Em 09/11/2026: Claude Code: [skills](https://code.claude.com/docs/en/skills) e [
 - **Aplicado:** faltava sonda do limite de 64 caracteres, e a tabela não dizia que pasta e `name` mudaram juntos, o que é necessário para exercitar o regex. Sondas refeitas assim.
 - **Aplicado:** "e já há uma beta" saiu da descrição da `payload-docs`: era fato datado, justamente o que a issue proíbe congelar.
 - **Descartado:** nenhum. O revisor não teve rede; os 404 de `llms.txt`, os bytes do `pnpm.io` e as docs do Copilot foram medidos ou lidos nesta sessão.
+
+## Missão #31
+
+### Decisões
+
+- **Checar, não gerar:** a doc do GitHub sobre READMEs não menciona include, o Markdown é renderizado como foi escrito. Um gerador ainda precisaria de uma checagem para pegar quem esqueceu de rodá-lo, e o "Done when" pede que o `pnpm check` reprove. Além disso, a prosa e a tabela em dois idiomas ficam legíveis no próprio arquivo (julgamento nosso).
+- **Sentinela (`scripts/check-readme-numbers.ts`) sobre `playwright test --list`, via o script `test:e2e`:** os flags não têm como divergir de como a suíte roda. Sem rede, sem navegador e sem servidor; custa cerca de 8 s no `pnpm check`.
+- **Reporter JSON em arquivo, não saída de texto:** o `Total: 63 tests` é texto para humanos, e o JSON traz o arquivo de cada teste e as anotações, com tipos públicos (`JSONReport`).
+- **Ambiente vindo do `.env.example`:** a config valida o ambiente, e nem o job `check` nem um clone limpo têm `.env`. Os valores são passados ao processo, então também vencem um `.env` local desatualizado, que o agente não lê.
+- **Cada arquivo em exatamente uma área:** spec novo fora da tabela reprova, e os links da própria tabela dizem quais arquivos somar. A soma das áreas igual ao total sai de graça. Os dois idiomas usam a mesma lógica, porque o link não se traduz.
+- **"8 testes de bug" vem da anotação `fail`, e "8 bugs" do mapa de KIs:** são fatos diferentes, e um KI com dois testes os separaria.
+- **`anchor` continua privado; `knownIssueAnchor(id)` foi exportado** para o README e o `knownIssue` usarem a mesma âncora.
+- **O que fica manual está em `.claude/rules/readme.md`** (e na cópia do Copilot), com o gatilho de cada item: carrega justamente quando alguém edita o README, e a mensagem da sentinela aponta para lá. Screenshots e execuções fixadas descrevem um momento e continuam honestos enquanto o texto disser de quando são, então não são refeitos a cada teste novo.
+- **Versões da linha "Stack" ficaram manuais:** a issue trata de contagens (YAGNI). Limite: o #36 sobe o Playwright sem nenhum portão avisar o README.
+
+### Como o RED foi visto
+
+Primeiro passo: `pnpm run check:readme` antes do arquivo existir, `ERR_MODULE_NOT_FOUND`. Sondas no próprio repositório, cada uma desfeita; controle com exit 0, todas as outras com exit 1:
+
+| Alvo                          | Sonda                                | Erro observado                                                     |
+| ----------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| Teste novo                    | `test` a mais em `homepage.spec.ts`  | `says 63 tests, the repository has 64`, área `says 13`, nos dois   |
+| Spec fora da tabela           | `probe.spec.ts` novo                 | `must be in exactly one area, found: []`                           |
+| Total em um idioma            | 64 só no `README.md`                 | `says 64 tests`, só nesse arquivo                                  |
+| "Verdes" em um idioma         | 64 só no pt-BR                       | `says 64 tests`, só nesse arquivo                                  |
+| Linha de área                 | `Contact form` com 2                 | `says 2 tests, its files have 1`                                   |
+| Arquivo em duas áreas         | `keyboard` também em `Contact form`  | `must be in exactly one area`, com as duas                         |
+| KI novo                       | `KI-9` no mapa                       | `says 8 knownIssues, the repository has 9`, `bugs table lacks`     |
+| Linha de bug removida         | `KI-8` fora do pt-BR                 | `bugs table lacks [KI-8]...`                                       |
+| Título em inglês              | Texto alterado em `KI-1`             | `title differs from the heading`                                   |
+| Âncora                        | `#ki-1-wrong`                        | `lacks` e `unknown`                                                |
+| `test.fail` removido          | Virou `test` em `contact-form`       | `says 8 bugTests, the repository has 7`                            |
+| Afirmação reescrita           | `Tests in main`                      | `no longer finds the tests claim`                                  |
+| Spec quebrado                 | Erro de sintaxe                      | `SyntaxError`, listagem reprova                                    |
+| Ligação no `pnpm check`       | 64 no `README.md`                    | `pnpm check` exit 1 com a mensagem da sentinela                    |
+
+### Achados
+
+- **`--list` com JSON saiu vazio na Missão 8 e completo aqui:** com `PLAYWRIGHT_JSON_OUTPUT_FILE` o relatório vem inteiro, e o stdout traz a listagem em texto mesmo com `--reporter=json`. Por isso o stdout é descartado e o stderr fica visível.
+- **Em `--list` nada rodou:** `expectedStatus` vem `passed` e `stats.skipped` conta 63. A marca do `test.fail` é só a anotação `fail`.
+
+### Fontes consultadas
+
+Em 09/11/2026: Playwright na tag `v1.63.0`: [CLI](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-cli-js.md) e [reporters](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-reporters-js.md); tipos `JSONReport` em `playwright/types/testReporter.d.ts`, de onde veio a forma do JSON. GitHub: [About the repository README file](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes) e [sintaxe de escrita](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
