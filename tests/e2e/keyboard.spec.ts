@@ -49,9 +49,10 @@ test.describe('keyboard navigation', () => {
 })
 
 // The only composite widget in the frontend: it has no tabs and no dialog.
-// Follows the WAI-ARIA select-only combobox pattern, with one difference that
-// the pattern allows: Radix moves DOM focus to the option instead of using
-// aria-activedescendant.
+// Checked against the WAI-ARIA select-only combobox pattern. The tests record
+// what Radix does, which differs from the pattern's example in two ways: DOM
+// focus moves to the option instead of using aria-activedescendant, and Tab
+// keeps the popup open instead of accepting the option and moving on.
 test.describe('theme selector', () => {
   let combobox: Locator
 

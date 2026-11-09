@@ -44,6 +44,6 @@ Issues are numbered in the order they were found.
 
 - **Observed:** with JavaScript disabled, or if its bundles fail to load, every frontend page stays at `opacity: 0`. The content is in the HTML, but nothing is visible.
 - **Expected:** server-rendered content stays readable without JavaScript.
-- **Cause:** `src/app/(frontend)/globals.css` sets `html { opacity: 0 }` until `data-theme` is set, and only the `InitTheme` script sets it. The rule prevents a flash of the wrong theme, at the cost of depending on that script.
+- **Cause:** `src/app/(frontend)/globals.css` sets `html { opacity: 0 }` until `data-theme` is set, and only JavaScript sets it (`InitTheme`, then `ThemeProvider`). The rule prevents a flash of the wrong theme, at the cost of depending on JavaScript.
 - **Impact:** moderate. Few visitors browse without JavaScript, but for them, and on a failed bundle load, the whole site is blank.
 - **Test:** `the page is visible`, in `tests/e2e/accessibility.spec.ts`.

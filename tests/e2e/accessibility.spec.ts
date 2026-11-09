@@ -23,6 +23,8 @@ const post = {
 // disableRules('color-contrast') would blind the scan to the whole page.
 const CODE_LINE_NUMBERS = '.token-line > .select-none'
 
+type ColorScheme = 'dark' | 'light'
+
 /** allSettled: a transition replaced by another rejects its `finished`. */
 async function animationsFinished(page: Page) {
   await page.evaluate(async () => {
@@ -36,15 +38,22 @@ async function animationsFinished(page: Page) {
  * to white: scanning during that fade reported a contrast of 4.42 for a color
  * that ends at 21.
  */
-async function openSettled(page: Page, path: string, heading: string) {
+async function openSettled(
+  page: Page,
+  path: string,
+  heading: string,
+  colorScheme: ColorScheme = 'light',
+) {
   await page.goto(path)
   await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+  // The emulated preference alone would not prove which theme gets scanned
+  await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme)
   await expect(page.getByRole('combobox', { name: 'Select a theme' })).toHaveText('Auto')
   await animationsFinished(page)
 }
 
-async function openThemeSelector(page: Page) {
-  await openSettled(page, '/search', 'Search')
+async function openThemeSelector(page: Page, colorScheme?: ColorScheme) {
+  await openSettled(page, '/search', 'Search', colorScheme)
   await page.getByRole('combobox', { name: 'Select a theme' }).click()
   await expect(page.getByRole('listbox')).toBeVisible()
   await animationsFinished(page)
@@ -56,14 +65,14 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
     for (const { name, path, heading } of pages) {
       test(`${name} has no detectable WCAG A or AA violations`, async ({ page, scan }) => {
-        await openSettled(page, path, heading)
+        await openSettled(page, path, heading, colorScheme)
 
         expect(await scan()).toEqual([])
       })
     }
 
     test('post has no detectable WCAG A or AA violations besides KI-3', async ({ page, scan }) => {
-      await openSettled(page, post.path, post.heading)
+      await openSettled(page, post.path, post.heading, colorScheme)
       // Keeps the exclusion honest: it must still point at something real
       await expect(page.locator(CODE_LINE_NUMBERS).first()).toBeVisible()
 
@@ -74,7 +83,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       page,
       scan,
     }) => {
-      await openThemeSelector(page)
+      await openThemeSelector(page, colorScheme)
 
       expect(await scan((axe) => axe.disableRules(['aria-hidden-focus']))).toEqual([])
     })
