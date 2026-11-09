@@ -1,4 +1,73 @@
-# Payload Website Template
+# Playwright E2E suite for a Next.js / Payload CMS app
+
+[![CI](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/workflows/ci.yml?query=branch%3Amain)
+
+**English** | [Português (Brasil)](README.pt-BR.md)
+
+A Playwright + TypeScript test suite for a Next.js 16 / Payload CMS website, running against the production build and a brand-new Postgres database on every `e2e` CI job. The application is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website), kept frozen: bugs are reported and pinned by tests, not patched.
+
+This is a personal portfolio project, not client work.
+
+## At a Glance
+
+| What                  | Result                                                   | Evidence                                                                                                                                                                                                                            |
+| --------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tests on `main`       | 62, all as expected, in 1.1 min                          | [HTML report](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (latest run on `main`)                                                                                                                                    |
+| Pipeline              | 5 jobs behind one required `ci-passed` gate, 3m 12s      | [Run at `6dc73c9`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/runs/42553516022), [workflow](.github/workflows/ci.yml), [ruleset](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/rules/26807974) |
+| Bugs found in the app | 7, each with a test asserting the correct behavior       | [Known issues](docs/KNOWN_ISSUES.md)                                                                                                                                                                                                |
+| Second CI platform    | The same `e2e` job on GitLab.com, 62 of 62 at `6636fd0`  | [Job log](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/jobs/17849067385), [green pipeline](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), [`.gitlab-ci.yml`](.gitlab-ci.yml) |
+| Stack                 | Playwright 1.63, Next.js 16.4, Payload 3.93, Postgres 18 | [`package.json`](package.json), [`compose.yaml`](compose.yaml)                                                                                                                                                                      |
+
+**About "62 green":** the 7 bug tests use `test.fail()`, so the report counts them as passed while the bug exists. If a bug gets fixed, its test starts failing and asks for the marker to be removed.
+
+| Area                                      | Tests | Where                                                                                                                                                            |
+| ----------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| REST API contract                         | 19    | [`tests/api/`](tests/api)                                                                                                                                        |
+| Accessibility and keyboard                | 23    | [`accessibility.spec.ts`](tests/e2e/accessibility.spec.ts), [`keyboard.spec.ts`](tests/e2e/keyboard.spec.ts)                                                     |
+| Homepage: desktop, mobile, reduced motion | 13    | [`homepage.spec.ts`](tests/e2e/homepage.spec.ts), [`.mobile`](tests/e2e/homepage.mobile.spec.ts), [`.reduced-motion`](tests/e2e/homepage.reduced-motion.spec.ts) |
+| CMS journey, admin panel to frontend      | 2     | [`cms.admin.spec.ts`](tests/e2e/cms.admin.spec.ts)                                                                                                               |
+| Specs that came with the template         | 4     | [`admin.e2e.spec.ts`](tests/e2e/admin.e2e.spec.ts), [`frontend.e2e.spec.ts`](tests/e2e/frontend.e2e.spec.ts)                                                     |
+| Admin login setup                         | 1     | [`auth.setup.ts`](tests/e2e/auth.setup.ts)                                                                                                                       |
+
+![Playwright HTML report: 62 passed, 0 failed, 0 flaky, 0 skipped](docs/images/report.png)
+
+![GitHub Actions run: check, audit, secret-scan, workflow-audit and e2e leading to ci-passed](docs/images/pipeline-github.png)
+
+## How this maps to a client brief
+
+| A client usually asks for              | What is here                                                                                                    | Evidence                                                                                                                                                                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| User journeys tested in a real browser | An editor changes a page in the admin panel, and an anonymous visitor sees the published result                 | [`cms.admin.spec.ts`](tests/e2e/cms.admin.spec.ts)                                                                                                                                                                                                                             |
+| API tests that catch breaking changes  | Response schemas for `/api/pages` and `/api/posts`, plus anonymous and authenticated permissions                | [`cms-contract.ts`](tests/helpers/cms-contract.ts), [`tests/api/`](tests/api)                                                                                                                                                                                                  |
+| Accessibility checks                   | axe scans up to WCAG 2.2 AA in both color themes, and keyboard-only navigation                                  | [`axe.ts`](tests/helpers/axe.ts), [`accessibility.spec.ts`](tests/e2e/accessibility.spec.ts), [`keyboard.spec.ts`](tests/e2e/keyboard.spec.ts)                                                                                                                                 |
+| Tests that can be trusted              | Each test written here was seen failing, before its support code existed or by mutation; the commits record how | Commits [`db83780`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/commit/db83780), [`ad6e89f`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/commit/ad6e89f), [`025581d`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/commit/025581d) |
+| A repeatable test environment          | Each `e2e` job gets a new Postgres, migrations, seed data and its own generated secrets                         | [`ci.yml`](.github/workflows/ci.yml), [`scripts/seed.ts`](scripts/seed.ts)                                                                                                                                                                                                     |
+| CI that blocks bad merges              | Types, lint, dependency audit, secret scan, workflow audit and E2E behind one gate                              | [Ruleset](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/rules/26807974), [pull request held back by a failing probe commit](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/pull/10)                                                                   |
+| GitHub Actions or GitLab CI            | Both ran for real; GitHub is the source of truth, GitLab runs the `e2e` job                                     | [GitHub run](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/runs/42553516022), [GitLab pipeline](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721)                                                                       |
+| Readable reports when something breaks | A public HTML report from `main`, and the report attached to any run whose tests fail                           | [Report](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/), [deliberately failing GitLab pipeline](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043130956)                                                                               |
+| Bugs reported clearly                  | Observed, expected, cause and impact for each defect                                                            | [Known issues](docs/KNOWN_ISSUES.md)                                                                                                                                                                                                                                           |
+
+## Bugs found
+
+All are in the generated app or its Payload dependency, and each one links to its full report. They are not all functional failures: KI-3 and KI-4 are accessibility findings from axe, and KI-5 is the cost of a deliberate rule against a flash of the wrong theme.
+
+| Id                                                                                                                      | Bug                                                                                   | Impact   |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------- |
+| [KI-1](docs/KNOWN_ISSUES.md#ki-1-homepage-title-repeats-the-site-name)                                                  | Homepage title repeats the site name                                                  | Low      |
+| [KI-2](docs/KNOWN_ISSUES.md#ki-2-unmatched-nested-urls-show-the-default-nextjs-404-page)                                | Unmatched nested URLs show the default Next.js 404 page                               | Moderate |
+| [KI-3](docs/KNOWN_ISSUES.md#ki-3-code-block-line-numbers-have-insufficient-contrast)                                    | Code block line numbers have insufficient contrast                                    | Low      |
+| [KI-4](docs/KNOWN_ISSUES.md#ki-4-open-theme-selector-leaves-focusable-content-inside-aria-hidden-regions)               | Open theme selector leaves focusable content inside aria-hidden regions               | Low      |
+| [KI-5](docs/KNOWN_ISSUES.md#ki-5-pages-are-blank-when-javascript-is-unavailable)                                        | Pages are blank when JavaScript is unavailable                                        | Moderate |
+| [KI-6](docs/KNOWN_ISSUES.md#ki-6-a-newly-published-post-is-missing-from-the-posts-listing)                              | A newly published post is missing from the posts listing                              | Moderate |
+| [KI-7](docs/KNOWN_ISSUES.md#ki-7-rest-validation-errors-lose-their-field-details-once-the-admin-panel-has-loaded-first) | REST validation errors lose their field details once the admin panel has loaded first | Low      |
+
+## What this does not cover
+
+- **Browsers:** Chromium only. The `mobile` project emulates a Pixel 7 on Chromium at 375x812; there is no Firefox, WebKit or real-device run.
+- **Test types:** no load, visual regression or security testing of the app.
+- **Accessibility:** automated scans and keyboard paths, not an audit with assistive technology.
+- **The application:** no existing file under `src/` changed since the first commit ([comparison](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/compare/f0154df...6dc73c9)), and only [generated migrations](src/migrations) were added. Commit [`51c76a2`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/commit/51c76a2) updated `next` and `sharp` for security fixes and corrected one template spec.
+- **GitLab:** the mirror is updated by hand and runs only the `e2e` job.
 
 ## Run locally
 
@@ -17,7 +86,7 @@ pnpm start
 Open <http://localhost:3000>. The admin panel is at <http://localhost:3000/admin>, and the seed creates a demo login: `demo-author@example.com` / `password`.
 
 - **Keep this order.** Static pages are generated during the build, so seeding after it leaves `/posts` empty for up to 10 minutes.
-- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:int`, including the Development section below) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
+- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:int`, including the [template's Development steps](docs/PAYLOAD_TEMPLATE_README.md#development)) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
 - **Start over:** `pnpm db:down` deletes the database, then repeat from `pnpm db:up`.
 
 ## Run the end-to-end tests
@@ -40,12 +109,12 @@ Defects found in the app are listed in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUE
 
 Every pull request runs these jobs, and the `ci-passed` gate requires all of them:
 
-| Job              | What it does                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `check`          | Types, lint, formatting and the repository sentinels (`pnpm check`)                                                 |
-| `audit`          | `pnpm audit --prod --audit-level=high`; accepted exceptions are listed per advisory in `pnpm-workspace.yaml`        |
-| `secret-scan`    | gitleaks over the commits of each pull request and push                                                             |
-| `workflow-audit` | zizmor over the workflows                                                                                           |
+| Job              | What it does                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `check`          | Types, lint, formatting and the repository sentinels (`pnpm check`)                                                |
+| `audit`          | `pnpm audit --prod --audit-level=high`; accepted exceptions are listed per advisory in `pnpm-workspace.yaml`       |
+| `secret-scan`    | gitleaks over the commits of each pull request and push                                                            |
+| `workflow-audit` | zizmor over the workflows                                                                                          |
 | `e2e`            | Migrate, seed, build, start and test in the official Playwright container, with a new Postgres and secrets per job |
 
 When `e2e` fails, the HTML report is attached to the run as an artifact, and the server log is in the output of the test step. The report of the latest run on `main` that reached the tests is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
@@ -54,306 +123,8 @@ When `e2e` fails, the HTML report is attached to the run as an artifact, and the
 
 The `e2e` job also runs on GitLab.com, from [`.gitlab-ci.yml`](.gitlab-ci.yml): same Playwright image, a Postgres service and the same migrate, seed, build and test sequence, on a Free-tier hosted runner. The container setup differs: it runs as root, without the `--init` and `--ipc=host` flags. GitHub stays the source of truth and runs every other gate. The [GitLab mirror](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci) is updated by hand, so the proof is one pipeline at one commit, not a live status: [green pipeline at `6636fd0`](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), and a [deliberately failing one](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043130956) that shows the job going red and keeping the report as an artifact.
 
-The sections below are the template's original documentation.
+![GitLab pipeline 3043123721: e2e job passed](docs/images/pipeline-gitlab.png)
 
-This is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website). Use it to power websites, blogs, or portfolios from small to enterprise. This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready website.
+## Template documentation
 
-This template is right for you if you are working on:
-
-- A personal or enterprise-grade website, blog, or portfolio
-- A content publishing platform with a fully featured publication workflow
-- Exploring the capabilities of Payload
-
-Core features:
-
-- [Pre-configured Payload Config](#how-it-works)
-- [Authentication](#users-authentication)
-- [Access Control](#access-control)
-- [Layout Builder](#layout-builder)
-- [Draft Preview](#draft-preview)
-- [Live Preview](#live-preview)
-- [On-demand Revalidation](#on-demand-revalidation)
-- [SEO](#seo)
-- [Search](#search)
-- [Redirects](#redirects)
-- [Jobs and Scheduled Publishing](#jobs-and-scheduled-publish)
-- [Website](#website)
-
-## Quick Start
-
-To spin up this example locally, follow these steps:
-
-### Clone
-
-If you have not done so already, you need to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
-
-Use the `create-payload-app` CLI to clone this template directly to your machine:
-
-```bash
-pnpx create-payload-app my-project -t website
-```
-
-### Development
-
-1. First [clone the repo](#clone) if you have not done so already
-1. `cd my-project && cp .env.example .env` to copy the example environment variables
-1. `pnpm install && pnpm dev` to install dependencies and start the dev server
-1. open `http://localhost:3000` to open the app in your browser
-
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
-
-## How it works
-
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
-
-### Collections
-
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
-
-- #### Users (Authentication)
-
-  Users are auth-enabled collections that have access to the admin panel and unpublished content. See [Access Control](#access-control) for more details.
-
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/3.x/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
-
-- #### Posts
-
-  Posts are used to generate blog posts, news articles, or any other type of content that is published over time. All posts are layout builder enabled so you can generate unique layouts for each post using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Posts are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
-
-- #### Pages
-
-  All pages are layout builder enabled so you can generate unique layouts for each page using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Pages are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
-
-- #### Media
-
-  This is the uploads enabled collection used by pages, posts, and projects to contain media like images, videos, downloads, and other assets. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
-
-- #### Categories
-
-  A taxonomy used to group posts together. Categories can be nested inside of one another, for example "News > Technology". See the official [Payload Nested Docs Plugin](https://payloadcms.com/docs/plugins/nested-docs) for more details.
-
-### Globals
-
-See the [Globals](https://payloadcms.com/docs/configuration/globals) docs for details on how to extend this functionality.
-
-- `Header`
-
-  The data required by the header on your front-end like nav links.
-
-- `Footer`
-
-  Same as above but for the footer of your site.
-
-## Access control
-
-Basic access control is setup to limit access to various content based based on publishing status.
-
-- `users`: Users can access the admin panel and create or edit content.
-- `posts`: Everyone can access published posts, but only users can create, update, or delete them.
-- `pages`: Everyone can access published pages, but only users can create, update, or delete them.
-
-For more details on how to extend this functionality, see the [Payload Access Control](https://payloadcms.com/docs/access-control/overview#access-control) docs.
-
-## Layout Builder
-
-Create unique page layouts for any type of content using a powerful layout builder. This template comes pre-configured with the following layout building blocks:
-
-- Hero
-- Content
-- Media
-- Call To Action
-- Archive
-
-Each block is fully designed and built into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Lexical editor
-
-A deep editorial experience that allows complete freedom to focus just on writing content without breaking out of the flow with support for Payload blocks, media, links and other features provided out of the box. See [Lexical](https://payloadcms.com/docs/rich-text/overview) docs.
-
-## Draft Preview
-
-All posts and pages are draft-enabled so you can preview them before publishing them to your website. To do this, these collections use [Versions](https://payloadcms.com/docs/configuration/collections#versions) with `drafts` set to `true`. This means that when you create a new post, project, or page, it will be saved as a draft and will not be visible on your website until you publish it. This also means that you can preview your draft before publishing it to your website. To do this, we automatically format a custom URL which redirects to your front-end to securely fetch the draft version of your content.
-
-Since the front-end of this template is statically generated, this also means that pages, posts, and projects will need to be regenerated as changes are made to published documents. To do this, we use an `afterChange` hook to regenerate the front-end when a document has changed and its `_status` is `published`.
-
-For more details on how to extend this functionality, see the official [Draft Preview Example](https://github.com/payloadcms/payload/tree/3.x/examples/draft-preview).
-
-## Live preview
-
-In addition to draft previews you can also enable live preview to view your end resulting page as you're editing content with full support for SSR rendering. See [Live preview docs](https://payloadcms.com/docs/live-preview/overview) for more details.
-
-## On-demand Revalidation
-
-We've added hooks to collections and globals so that all of your pages, posts, footer, or header changes will automatically be updated in the frontend via on-demand revalidation supported by Nextjs.
-
-> Note: if an image has been changed, for example it's been cropped, you will need to republish the page it's used on in order to be able to revalidate the Nextjs image cache.
-
-## SEO
-
-This template comes pre-configured with the official [Payload SEO Plugin](https://payloadcms.com/docs/plugins/seo) for complete SEO control from the admin panel. All SEO data is fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Search
-
-This template also pre-configured with the official [Payload Search Plugin](https://payloadcms.com/docs/plugins/search) to showcase how SSR search features can easily be implemented into Next.js with Payload. See [Website](#website) for more details.
-
-## Redirects
-
-If you are migrating an existing site or moving content to a new URL, you can use the `redirects` collection to create a proper redirect from old URLs to new ones. This will ensure that proper request status codes are returned to search engines and that your users are not left with a broken link. This template comes pre-configured with the official [Payload Redirects Plugin](https://payloadcms.com/docs/plugins/redirects) for complete redirect control from the admin panel. All redirects are fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Jobs and Scheduled Publish
-
-We have configured [Scheduled Publish](https://payloadcms.com/docs/versions/drafts#scheduled-publish) which uses the [jobs queue](https://payloadcms.com/docs/jobs-queue/jobs) in order to publish or unpublish your content on a scheduled time. The tasks are run on a cron schedule and can also be run as a separate instance if needed.
-
-> Note: When deployed on Vercel, depending on the plan tier, you may be limited to daily cron only.
-
-## Website
-
-This template includes a beautifully designed, production-ready front-end built with the [Next.js App Router](https://nextjs.org), served right alongside your Payload app in a instance. This makes it so that you can deploy both your backend and website where you need it.
-
-Core features:
-
-- [Next.js App Router](https://nextjs.org)
-- [TypeScript](https://www.typescriptlang.org)
-- [React Hook Form](https://react-hook-form.com)
-- [Payload Admin Bar](https://github.com/payloadcms/payload/tree/3.x/packages/admin-bar)
-- [TailwindCSS styling](https://tailwindcss.com/)
-- [shadcn/ui components](https://ui.shadcn.com/)
-- User Accounts and Authentication
-- Fully featured blog
-- Publication workflow
-- Dark mode
-- Pre-made layout building blocks
-- SEO
-- Search
-- Redirects
-- Live preview
-
-### Cache
-
-Although Next.js includes a robust set of caching strategies out of the box, Payload Cloud proxies and caches all files through Cloudflare using the [Official Cloud Plugin](https://www.npmjs.com/package/@payloadcms/payload-cloud). This means that Next.js caching is not needed and is disabled by default. If you are hosting your app outside of Payload Cloud, you can easily reenable the Next.js caching mechanisms by removing the `no-store` directive from all fetch requests in `./src/app/_api` and then removing all instances of `export const dynamic = 'force-dynamic'` from pages files, such as `./src/app/(pages)/[slug]/page.tsx`. For more details, see the official [Next.js Caching Docs](https://nextjs.org/docs/app/building-your-application/caching).
-
-## Development
-
-To spin up this example locally, follow the [Quick Start](#quick-start). Then [Seed](#seed) the database with a few pages, posts, and projects.
-
-### Working with Postgres
-
-Postgres and other SQL-based databases follow a strict schema for managing your data. In comparison to our MongoDB adapter, this means that there's a few extra steps to working with Postgres.
-
-Note that often times when making big schema changes you can run the risk of losing data if you're not manually migrating it.
-
-#### Local development
-
-Ideally we recommend running a local copy of your database so that schema updates are as fast as possible. By default the Postgres adapter has `push: true` for development environments. This will let you add, modify and remove fields and collections without needing to run any data migrations.
-
-If your database is pointed to production you will want to set `push: false` otherwise you will risk losing data or having your migrations out of sync.
-
-#### Migrations
-
-[Migrations](https://payloadcms.com/docs/database/migrations) are essentially SQL code versions that keeps track of your schema. When deploy with Postgres you will need to make sure you create and then run your migrations.
-
-Locally create a migration
-
-```bash
-pnpm payload migrate:create
-```
-
-This creates the migration files you will need to push alongside with your new configuration.
-
-On the server after building and before running `pnpm start` you will want to run your migrations
-
-```bash
-pnpm payload migrate
-```
-
-This command will check for any migrations that have not yet been run and try to run them and it will keep a record of migrations that have been run in the database.
-
-### Docker
-
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
-
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
-
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
-
-### Seed
-
-To seed the database with a few pages, posts, and projects you can click the 'seed database' link from the admin panel.
-
-The seed script will also create a demo user for demonstration purposes only:
-
-- Demo Author
-  - Email: `demo-author@payloadcms.com`
-  - Password: `password`
-
-> NOTICE: seeding the database is destructive because it drops your current database to populate a fresh one from the seed template. Only run this command if you are starting a new project or can afford to lose your current data.
-
-## Production
-
-To run Payload in production, you need to build and start the Admin panel. To do so, follow these steps:
-
-1. Invoke the `next build` script by running `pnpm build` or `npm run build` in your project root. This creates a `.next` directory with a production-ready admin bundle.
-1. Finally run `pnpm start` or `npm run start` to run Node in production and serve Payload from the `.build` directory.
-1. When you're ready to go live, see Deployment below for more details.
-
-### Deploying to Vercel
-
-This template can also be deployed to Vercel for free. You can get started by choosing the Vercel DB adapter during the setup of the template or by manually installing and configuring it:
-
-```bash
-pnpm add @payloadcms/db-vercel-postgres
-```
-
-```ts
-// payload.config.ts
-import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
-
-export default buildConfig({
-  // ...
-  db: vercelPostgresAdapter({
-    pool: {
-      connectionString: process.env.POSTGRES_URL || '',
-    },
-  }),
-  // ...
-```
-
-We also support Vercel's blob storage:
-
-```bash
-pnpm add @payloadcms/storage-vercel-blob
-```
-
-```ts
-// payload.config.ts
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
-
-export default buildConfig({
-  // ...
-  plugins: [
-    vercelBlobStorage({
-      collections: {
-        [Media.slug]: true,
-      },
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
-    }),
-  ],
-  // ...
-```
-
-There is also a simplified [one click deploy](https://github.com/payloadcms/payload/tree/3.x/templates/with-vercel-postgres) to Vercel should you need it.
-
-### Self-hosting
-
-Before deploying your app, you need to:
-
-1. Ensure your app builds and serves in production. See [Production](#production) for more details.
-2. You can then deploy Payload as you would any other Node.js or Next.js application either directly on a VPS, DigitalOcean's Apps Platform, via Coolify or more. More guides coming soon.
-
-You can also deploy your app manually, check out the [deployment documentation](https://payloadcms.com/docs/production/deployment) for full details.
-
-## Questions
-
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+The original Payload template documentation is kept, unchanged, in [`docs/PAYLOAD_TEMPLATE_README.md`](docs/PAYLOAD_TEMPLATE_README.md).

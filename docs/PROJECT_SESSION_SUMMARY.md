@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 6 — Paridade no GitLab CI (#7), concluída com o merge do PR da missão |
-| Próxima missão   | Missão 8 — Documentação e vitrine (#9), a P1 restante |
+| Missão atual     | Missão 8 — Documentação e vitrine (#9), concluída com o merge do PR da missão |
+| Próxima missão   | Missão 7 — Experimento com agentes (#8), a P2 de menor número; a #21 destrava o PR #24 do Dependabot |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -427,3 +427,58 @@ Pipelines no GitLab.com: [verde em `6636fd0`](https://gitlab.com/brunoccalmeida1
 ### Fontes consultadas
 
 Em 08/11/2026: GitLab: [serviço PostgreSQL](https://docs.gitlab.com/ci/services/postgres/), [services](https://docs.gitlab.com/ci/services/), [referência do YAML](https://docs.gitlab.com/ci/yaml/), [runners Linux](https://docs.gitlab.com/ci/runners/hosted_runners/linux/), [espelhamento](https://docs.gitlab.com/user/project/repository/mirror/), [compute minutes](https://docs.gitlab.com/ci/pipelines/compute_minutes/), [debugging](https://docs.gitlab.com/ci/debugging/), [visibilidade](https://docs.gitlab.com/user/public_access/) e [preços](https://about.gitlab.com/pricing/); Playwright: [CI](https://playwright.dev/docs/ci) e [Docker](https://playwright.dev/docs/docker); pnpm: [CI](https://pnpm.io/continuous-integration), [runtime](https://pnpm.io/cli/runtime) e [instalação](https://pnpm.io/installation).
+
+## Missão 8 (#9)
+
+### Decisões
+
+- **Números medidos, não copiados deste resumo:** `playwright test --list` (62 testes em 11 arquivos) e o log do job `e2e` em `6dc73c9` (`62 passed (1.1m)`).
+- **O README diz que os 62 incluem os 7 `test.fail`:** o relatório os conta como aprovados, e "62 verdes" sozinho sugeriria um app sem defeitos.
+- **Seção "What this does not cover":** só Chromium, `mobile` é emulação, sem carga nem regressão visual. Faz parte do critério de honestidade da issue.
+- **Documentação do template movida, sem alterações, para `docs/PAYLOAD_TEMPLATE_README.md`:** eram 300 das 359 linhas e o título do README era o do template. O corpo foi comparado com `diff`: idêntico.
+- **Screenshots em `docs/images/`, com links relativos**, como pede a doc do GitHub.
+- **Verificador de links fora do `pnpm check` (YAGNI):** rodou uma vez, no scratchpad. Virar sentinela faria o CI depender de GitHub, GitLab e Pages no ar, ou seja, de rede externa, para um PR sem relação (julgamento nosso).
+- **Upwork: o agente prepara, o usuário publica** (decisão do usuário). É um perfil público, em nome dele.
+
+### Item de portfólio no Upwork
+
+- **Título (63/70):** Playwright E2E suite and CI for a Next.js / Payload CMS website
+- **Papel (51/100):** QA Automation Engineer (personal portfolio project)
+- **Por que "62" e "issues":** o relatório público mostra `All 62`, porque conta o `setup` de login; os "61" da tabela de estado são sem ele. "Issues", e não "bugs", porque KI-3 e KI-4 são achados do axe, e o KI-4 quase não tem efeito prático (o Tab não sai do popup); o KI-5 vem de uma regra deliberada.
+- **Descrição (534/600):** Personal project, not client work. Playwright + TypeScript suite for the official Payload CMS website template: 62 tests covering the REST API contract, accessibility (axe, WCAG 2.2 AA), keyboard use, a mobile viewport and an admin-to-frontend journey, on the production build with a new Postgres per CI run. It found 7 real issues, each documented and pinned by a test. Runs on GitHub Actions behind 5 quality gates; its E2E job also passed on GitLab CI. Public report and evidence: github.com/brunoccalmeida/playwright-nextjs-e2e-ci
+- **Pendência do usuário:** publicar o item no perfil. O texto e as imagens estão prontos; nada foi enviado ao Upwork.
+- **Skills:** Playwright, TypeScript, GitHub Actions, GitLab CI, Accessibility Testing. Os nomes exatos dependem da lista do formulário.
+- **Mídia:** `docs/images/report.png` (capa), `pipeline-github.png`, `pipeline-gitlab.png` e o link do repositório.
+
+### Como o RED foi visto
+
+| Alvo                       | Sonda, numa cópia em pasta temporária                   | Erro observado                               |
+| -------------------------- | ------------------------------------------------------- | -------------------------------------------- |
+| Link para arquivo          | `tests/helpers/cms-contract.ts` trocado por `nope.ts`   | `missing file tests/helpers/nope.ts`         |
+| Âncora de known issue      | `#ki-3-wrong-anchor`                                    | `missing anchor`                             |
+| Link externo               | Pipeline `9999999999`                                   | `HTTP 404`                                   |
+| Paridade EN e pt-BR        | Link alterado em um só idioma                           | `only in README.md`, `only in README.pt-BR.md` |
+
+Com os arquivos reais, depois da revisão: 49 links distintos (16 externos), todos resolvem, e as duas línguas citam a mesma evidência.
+
+### Revisão independente
+
+- **Aplicado:** "62 of 62" no GitLab apontava para uma pipeline com a aba `Tests 0`. Agora há link para o log do job, conferido: `62 passed (1.4m)`.
+- **Aplicado:** "latest run" era um link fixo, que ficaria falso no merge seguinte.
+- **Aplicado:** "required" e "blocks bad merges" não tinham prova. Agora apontam para o ruleset, que exige `ci-passed`, e para o PR #10, com o commit-sonda barrado.
+- **Aplicado:** "seen failing first" exagerava: parte dos testes nasceu verde e foi vista falhando por mutação.
+- **Aplicado:** o relatório só fica anexado quando os testes chegam a rodar, não em "any failing run"; "every CI job" valia só para o `e2e`.
+- **Aplicado:** o KI-7 está na dependência Payload, não no template gerado.
+- **Aplicado:** o texto do Upwork sugeria execução contínua no GitLab, com os mesmos portões.
+- **Aplicado:** a afirmação sobre `src/` ganhou link de comparação, e a das dependências, o commit `51c76a2`.
+- **Descartado:** trocar `Closes #9` por `Refs #9`. O "Done when" da issue é o README com evidências, e publicar no Upwork é ato do usuário, por decisão dele. A pendência está registrada acima e no pedido de merge.
+
+### Achados
+
+- **`--reporter=json` com `--list` saiu vazio**, e o `2>/dev/null` escondeu isso. O contador deu `total 0`, tratado como falha e refeito com `--reporter=line`. Resposta vazia não é resposta.
+- **Validade da evidência:** o relatório publicado é sempre o da última `main`, e o badge é ao vivo. O link do run fixa `6dc73c9`, mas o GitHub expira os logs (padrão de 90 dias); o resumo do run segue visível. Ao mudar o número de testes, atualizar a tabela do README nos dois idiomas.
+- **Screenshot com tempo relativo:** o do GitHub mostra "16 hours ago", e envelhece. Não afeta o conteúdo.
+
+### Fontes consultadas
+
+Em 09/11/2026: GitHub: [About the repository README file](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes) e [sintaxe de escrita](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax); Upwork: [How to enhance your freelancer profile](https://support.upwork.com/hc/en-us/articles/360016144974-How-to-enhance-your-freelancer-profile), [Portfolio Guide](https://www.upwork.com/resources/portfolio-guide) e [How To Make a Freelance Portfolio](https://www.upwork.com/resources/how-to-create-portfolio).
