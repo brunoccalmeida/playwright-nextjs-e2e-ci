@@ -63,3 +63,11 @@ Issues are numbered in the order they were found.
 - **Cause:** `formatErrors` in `payload/dist/utilities/formatErrors.js` only keeps `name` and `data` when `incoming instanceof ValidationError`. The likely reason it is false is that the admin and API routes get separate bundled copies of the class. The dependence on the first route is measured; the separate copies are inferred.
 - **Impact:** low. The status and the summary message stay correct, but a REST client cannot highlight individual fields.
 - **Test:** `a validation error details each invalid field`, in `tests/api/pages.spec.ts`.
+
+## KI-8: A malformed email shows the generic required-field message
+
+- **Observed:** after typing `not-an-email` in the contact form's Email field and submitting, the message under the field is `This field is required`, although the field is filled in. The form is not sent.
+- **Expected:** a message that says the email format is wrong.
+- **Cause:** `src/blocks/Form/Email/index.tsx` registers `pattern` without a `message`, and `src/blocks/Form/Error/index.tsx` falls back to `This field is required` for any error without one.
+- **Impact:** low. The input is still rejected, but the message misleads the visitor about what to fix.
+- **Test:** `a malformed email gets a message about its format`, in `tests/e2e/contact-form.spec.ts`.

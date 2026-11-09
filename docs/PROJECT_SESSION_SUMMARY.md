@@ -8,14 +8,14 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 8 — Documentação e vitrine (#9), concluída com o merge do PR da missão |
-| Próxima missão   | Missão 7 — Experimento com agentes (#8), a P2 de menor número; a #21 destrava o PR #24 do Dependabot |
+| Missão atual     | Missão 7 — Experimento com agentes (#8), concluída com o merge do PR da missão |
+| Próxima missão   | #17 (aviso MIT no `LICENSE`), a P2 de menor número; a #21 destrava o PR #24 do Dependabot |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | 61 no build de produção: 4 do template e 57 próprios (19 de API e 2 da jornada do CMS novos), em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login; 7 são `test.fail` (KI-1 a KI-7) |
+| Testes           | 62 no build de produção: 4 do template e 58 próprios, em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login (63 no relatório); 8 são `test.fail` (KI-1 a KI-8) |
 
 ## Plano de missões
 
@@ -482,3 +482,53 @@ Com os arquivos reais, depois da revisão: 49 links distintos (16 externos), tod
 ### Fontes consultadas
 
 Em 09/11/2026: GitHub: [About the repository README file](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes) e [sintaxe de escrita](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax); Upwork: [How to enhance your freelancer profile](https://support.upwork.com/hc/en-us/articles/360016144974-How-to-enhance-your-freelancer-profile), [Portfolio Guide](https://www.upwork.com/resources/portfolio-guide) e [How To Make a Freelance Portfolio](https://www.upwork.com/resources/how-to-create-portfolio).
+
+## Missão 7 (#8)
+
+Relatório completo, público e em inglês: [`docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md`](PLAYWRIGHT_AGENTS_EXPERIMENT.md). Aqui fica o que serve às próximas sessões.
+
+### Decisões
+
+- **`--loop=claude`:** a dúvida da issue. O `--help` da 1.63.0 lista esse valor, e o exemplo com `vscode` na seção do Claude Code da doc parece erro da página.
+- **Execução em `claude -p`, decisão do usuário:** o `.mcp.json` nasce depois do início do chat, então as ferramentas não existem na sessão. O `-p` também grava o transcript, que é a evidência.
+- **Três condições no healer, mesmo bug:** regras + comentário-dica do generator (`test.fail`), regras sem comentário (propôs `test.fail`, edições negadas) e sem regras (`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, `test.fixme()`). A condição do meio partiu da `main`, para o repositório não citar o KI-8.
+- **Definições, `.mcp.json`, plano e testes gerados fora do PR (YAGNI):** a doc pede para regenerar a cada atualização do Playwright, e a ferramenta não entrou em uso.
+- **KI-8 escrito à mão, não aproveitado do gerado:** um e-mail só, porque num `test.fail` as voltas seguintes de um laço nunca rodam, e o regex aceita "e-mail", para não seguir "falhando" depois de uma correção com outra grafia.
+- **Sem asserção `toBeHidden` na mensagem genérica:** passaria no instante antes de a validação renderizar.
+- **O relatório é em inglês:** é evidência pública do portfólio, com link nos dois READMEs.
+
+### Como o RED foi visto
+
+| Alvo                             | Como                                                | Erro observado                                                    |
+| -------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
+| KI-8, sem marcação               | `test` puro, com o bug no app                       | `getByText(/valid.*e-?mail.../i)`, `element(s) not found`         |
+| `test.fail` percebe a correção   | Asserção procurando o texto que existe              | `Expected to fail, but passed`                                    |
+
+Causa do KI-8 lida no código: `pattern` sem `message` no campo de e-mail, e `Error` cai no texto padrão.
+
+Validação: `pnpm check` verde e, com `CI=1`, banco novo e `.next` limpo, 63 de 63.
+
+### Achados
+
+- **Heartbeat não é progresso.** Disse ao usuário que o planner não tinha travado porque o arquivo era gravado segundos antes. Eram só eventos `tool_progress` de uma chamada parada. O número que importa é o de chamadas concluídas.
+- **Agente pode travar sem limite:** `waitFor()` sem `actionTimeout` não tem prazo, e o limite de orçamento não ajuda, porque ferramenta parada não gasta. Rode sempre com limite externo.
+- **O `exit 0` de script em segundo plano é do último comando:** conferir o `result` no transcript. O do planner morto também veio 0.
+- **`tail` escondeu a causa outra vez:** o primeiro erro do seed se perdeu com `tail -3`. Log em arquivo resolveu na ocorrência seguinte.
+- **Deadlock ao repetir o seed (#32):** `Promise.all` no seed congelado do template. Não afeta o CI, cujo banco nasce vazio.
+- **`.next/cache` guarda dados de um build ruim:** build após seed quebrado grava o header vazio, e o build seguinte reaproveita. Três testes reprovaram por falta do link `Posts`, com o banco correto. Remover `.next` resolveu. Validar sempre com `.next` limpo, como o CI.
+- **Pendência do usuário, Upwork:** o texto preparado na Missão 8 cita 62 testes e 7 problemas. Depois deste merge são 63 e 8; ajustar antes de publicar.
+
+### Fontes consultadas
+
+Em 09/11/2026: Playwright: [Test Agents](https://playwright.dev/docs/test-agents) e [classe Test](https://playwright.dev/docs/api/class-test) (`test.fixme`, `test.fail`); Claude Code: [MCP](https://code.claude.com/docs/en/mcp), [execução programática](https://code.claude.com/docs/en/headless) e [variáveis de ambiente](https://code.claude.com/docs/en/env-vars). Opções do `init-agents` e do `run-test-mcp-server` conferidas no `--help` da 1.63.0.
+
+### Revisão independente
+
+- **Aplicado, com medição nova:** comparar "com regras" e "sem regras" misturava duas variáveis, porque só a primeira tinha o comentário do generator citando `test.fail`. A condição que faltava rodou (regras, sem comentário): nada de `fixme`, e `test.fail` proposto. O relatório diz agora o que cada condição mostrou.
+- **Aplicado:** o veredito afirmava que o healer não distingue teste velho de regressão, sem nenhuma execução com o app regredido. Agora é inferência declarada, e o limite está listado.
+- **Aplicado:** "não tem outra fonte" era falso: o plano existia. O observado é que ele não consultou.
+- **Aplicado:** edição de `KNOWN_ISSUES.md` saiu de "quebra as regras", porque é o que a regra manda; virou observação sobre escopo de permissão.
+- **Aplicado:** `n` perdido no README em português, linha do `contact-form.spec.ts` na tabela por área (a soma dava 62), nota de que o screenshot é da execução de 62, e tempo de "1,1 min" retirado, pois não foi medido com 63 testes.
+- **Aplicado:** "Reproducing it" ganhou a invocação do `claude -p`, as ferramentas e as mutações.
+- **Descartado:** publicar os transcripts. Trazem caminhos locais e não acrescentam ao que o relatório resume; estão fora do repositório.
+- **Descartado:** recapturar o screenshot agora. Ele só pode mostrar 63 depois do merge publicar o relatório; a #31 trata da sincronia dos números.
