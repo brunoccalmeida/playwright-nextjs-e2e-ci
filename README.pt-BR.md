@@ -51,7 +51,7 @@ Este é um projeto pessoal de portfólio, não um trabalho para cliente.
 
 ## Bugs encontrados
 
-Todos estão no app gerado ou na dependência Payload, e cada um leva ao relato completo (em inglês).
+Todos estão no app gerado ou na dependência Payload, e cada um leva ao relato completo (em inglês). Nem todos são falhas funcionais: KI-3 e KI-4 são achados de acessibilidade do axe, e KI-5 é o custo de uma regra deliberada contra o lampejo do tema errado.
 
 | Id                                                                                                                      | Bug                                                                                 | Impacto  |
 | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------- |

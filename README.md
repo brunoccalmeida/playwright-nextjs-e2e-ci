@@ -49,7 +49,7 @@ This is a personal portfolio project, not client work.
 
 ## Bugs found
 
-All are in the generated app or its Payload dependency, and each one links to its full report.
+All are in the generated app or its Payload dependency, and each one links to its full report. They are not all functional failures: KI-3 and KI-4 are accessibility findings from axe, and KI-5 is the cost of a deliberate rule against a flash of the wrong theme.
 
 | Id                                                                                                                      | Bug                                                                                   | Impact   |
 | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------- |
