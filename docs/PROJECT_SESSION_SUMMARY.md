@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 7 — Experimento com agentes (#8), concluída com o merge do PR da missão |
-| Próxima missão   | #17 (aviso MIT no `LICENSE`), a P2 de menor número; a #21 destrava o PR #24 do Dependabot |
+| Missão atual     | Aviso MIT da Payload no `LICENSE` (#17), concluída com o merge do PR da missão |
+| Próxima missão   | #20 (exceções do `happy-dom` no audit), a P2 de menor número; a #21 destrava o PR #24 do Dependabot |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -532,3 +532,29 @@ Em 09/11/2026: Playwright: [Test Agents](https://playwright.dev/docs/test-agents
 - **Aplicado:** "Reproducing it" ganhou a invocação do `claude -p`, as ferramentas e as mutações.
 - **Descartado:** publicar os transcripts. Trazem caminhos locais e não acrescentam ao que o relatório resume; estão fora do repositório.
 - **Descartado:** recapturar o screenshot agora. Ele só pode mostrar 63 depois do merge publicar o relatório; a #31 trata da sincronia dos números.
+
+## Missão #17
+
+### Decisões
+
+- **Uma linha de copyright a mais, um único texto de permissão.** Os dois avisos são o mesmo texto MIT (diferem só em aspas e quebra de linha, comparado com `diff` normalizado), e as duas partes ficam sob a mesma concessão. Empilhar os titulares acima de um texto só é convenção de comunidade, não norma: não achei fonte oficial sobre a forma (julgamento nosso).
+- **Aviso da versão de onde o template saiu:** `2018-2025 Payload CMS, Inc.`, da tag `v3.93.0`, idêntico ao de `node_modules/payload/LICENSE.md`. A `main` da Payload já diz `2018-2026 Payload CMS, LLC`, mas o que a licença manda preservar é o aviso do que foi copiado.
+- **README sem mudança:** nenhum dos dois cita licença, e a MIT não exige dizer qual parte é de quem (YAGNI). Se o repositório precisar explicar a origem do código, é ali, não no `LICENSE`, como orienta o GitHub.
+- **Sem sentinela no `pnpm check` (YAGNI):** o aviso é uma linha que só muda se alguém a apagar, e o `LICENSE` não acompanha atualizações da Payload.
+
+### Como o RED foi visto
+
+| Alvo                 | Como                                                   | Resultado observado                                       |
+| -------------------- | ------------------------------------------------------ | --------------------------------------------------------- |
+| Aviso ausente        | `grep -qF` da linha da Payload no `LICENSE` original   | Exit 1; depois da mudança, exit 0                         |
+| Detecção do GitHub   | Commit-sonda com o aviso inteiro em um segundo bloco   | `GET /license?ref=` responde `NOASSERTION` (`other`)      |
+| Forma final          | Mesma consulta na branch                               | `MIT`, com `sha` igual ao de `git rev-parse HEAD:LICENSE` |
+
+### Achados
+
+- **Detecção de licença é medível por branch:** `GET /repos/{owner}/{repo}/license?ref=<branch>`. Conferir o `sha` da resposta contra o blob local garante que a leitura é do commit certo, a mesma ideia de consultar checks pelo SHA da head.
+- **O exemplo que a doc não dá:** a doc do GitHub só diz para simplificar o `LICENSE` e não explica o que acontece com texto extra. A sonda mostrou o efeito real.
+
+### Fontes consultadas
+
+Em 09/11/2026: GitHub: [Licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository); [Licensee: what we look at](https://github.com/licensee/licensee/blob/main/docs/what-we-look-at.md); [choosealicense: MIT](https://choosealicense.com/licenses/mit/); [`LICENSE.md` da Payload](https://github.com/payloadcms/payload/blob/v3.93.0/LICENSE.md) na versão usada. Convenção de combinar avisos: [resposta no Software Engineering Stack Exchange](https://backiee.wasmer.app/https_softwareengineering_stackexchange_com/questions/306029/how-to-license-application-generated-from-boilerplate-code), um espelho, sem autoridade normativa.
