@@ -223,7 +223,8 @@ Primeiro passo: `config/playwright.config.ts does not exist`. Depois, a primeira
 | Scroll horizontal           | Elemento de 2000 px injetado             | `Expected: 0, Received: 1625`                      |
 | Navegação na tela           | `nav` deslocada 400 px                   | `Expected: <= 0, Received: 287.65625`              |
 | Projeto `reduced-motion`    | `reducedMotion: 'no-preference'`         | `Expected: true, Received: false`                  |
-| Sem animação                | Animação CSS injetada                    | `Expected: 0, Received: 1`                         |
+| Sem animação                | Animação CSS de 300 ms injetada          | `p on H1` na lista recebida                        |
+| Sem transição               | Transição de opacidade de 300 ms         | `opacity on H1` na lista recebida                  |
 
 Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 51 de 51.
 
@@ -236,6 +237,12 @@ Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 51
 - **O cache de navegadores é compartilhado entre projetos**, e cada versão do Playwright pede o seu binário. O erro `Executable doesn't exist` se resolve com `pnpm exec playwright install chromium`, agora no README.
 - **`.env` local desatualizado:** segredos curtos reprovam na validação, inclusive em `pnpm test:e2e`, que agora valida o ambiente ao carregar a config. Na sessão, os valores vieram de variáveis de processo com segredos descartáveis, como no CI; o `.env` é travado para o agente e não foi lido nem alterado.
 - **Nova missão pedida pelo usuário:** skills para as fontes de melhores práticas mais consultadas (#25).
+
+### Revisão independente
+
+- **Aplicado:** o teste de `reduced-motion` usava `expect.poll` sobre `document.getAnimations()`, que espera a animação acabar, e a mutação era de 60 s: um fade-in curto passaria. Agora um `addInitScript` registra `animationstart` e `transitionrun` desde o início da página, e o RED foi refeito com 300 ms. Sem filtro, o teste reprovou no app intacto com `transitionrun` de `color` e duração 0 em `Posts`, `Contact` e no seletor de tema, no carregamento. Não é bug: a [WCAG 2.3.3](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html) exclui mudança de cor de animação de movimento e o [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) aponta escala e deslocamento como gatilhos. Por isso só cor fica fora; manter opacidade reprovando é julgamento nosso, porque a issue pede conteúdo visível sem animação. Limite conhecido: animação feita só por `element.animate()` não dispara esses eventos; o frontend não usa.
+- **Conferir no primeiro run do CI:** o `pnpm start` subir da raiz com `cwd: '..'`. Localmente já subiu assim.
+- **Descartado:** nenhum.
 
 ### Fontes consultadas
 
