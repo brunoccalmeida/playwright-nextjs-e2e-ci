@@ -13,6 +13,8 @@ export const knownIssueTitles = {
   'KI-3': 'Code block line numbers have insufficient contrast',
   'KI-4': 'Open theme selector leaves focusable content inside aria-hidden regions',
   'KI-5': 'Pages are blank when JavaScript is unavailable',
+  'KI-6': 'A newly published post is missing from the posts listing',
+  'KI-7': 'REST validation errors lose their field details once the admin panel has loaded first',
 } as const
 
 export type KnownIssueId = keyof typeof knownIssueTitles

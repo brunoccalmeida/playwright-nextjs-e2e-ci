@@ -2,14 +2,19 @@ import 'dotenv/config'
 
 import { defineConfig, devices } from '@playwright/test'
 
-import { parseEnv } from '../scripts/env'
+import { parseEnv, parseTestEnv } from '../scripts/env'
+import { ADMIN_STATE } from '../tests/helpers/auth-state'
 
 const { NEXT_PUBLIC_SERVER_URL: baseURL } = parseEnv()
+// Here and not only in the setup: a missing credential must stop the run
+// before the build is served, not fail it from inside a test
+parseTestEnv()
 
 const desktop = { ...devices['Desktop Chrome'], channel: 'chromium' }
 
 const MOBILE_SPECS = /\.mobile\.spec\.ts$/
 const REDUCED_MOTION_SPECS = /\.reduced-motion\.spec\.ts$/
+const ADMIN_SPECS = /\.admin\.spec\.ts$/
 
 // The template's playwright.config.ts stays as generated. Paths here are
 // relative to this file, so they point back to the repository root.
@@ -28,8 +33,26 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'setup',
+      testMatch: /\.setup\.ts$/,
+      use: desktop,
+    },
+    {
+      name: 'api',
+      testDir: '../tests/api',
+      // No storageState: `request` is an anonymous visitor here, and a test
+      // that needs a session asks for it through the adminRequest fixture
+      dependencies: ['setup'],
+    },
+    {
+      name: 'admin',
+      testMatch: ADMIN_SPECS,
+      use: { ...desktop, storageState: ADMIN_STATE },
+      dependencies: ['setup'],
+    },
+    {
       name: 'chromium',
-      testIgnore: [MOBILE_SPECS, REDUCED_MOTION_SPECS],
+      testIgnore: [MOBILE_SPECS, REDUCED_MOTION_SPECS, ADMIN_SPECS],
       use: desktop,
     },
     {

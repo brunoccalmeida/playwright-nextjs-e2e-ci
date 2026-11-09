@@ -30,7 +30,11 @@ pnpm test:e2e                           # starts `pnpm start`, or reuses a runni
 pnpm exec playwright show-report        # opens the HTML report
 ```
 
-The tests run against the production build, so run `pnpm build` again after changing the app. Projects: `chromium` (desktop), `mobile` (375x812) and `reduced-motion`. Defects found in the app are listed in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md).
+The tests run against the production build, so run `pnpm build` again after changing the app. Projects: `setup` (admin login), `api` (REST contract of `/api/pages` and `/api/posts`), `admin` (journey from the admin panel to the frontend), `chromium` (desktop), `mobile` (375x812) and `reduced-motion`.
+
+The suite logs in with `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD`. A `.env` created before they were added to `.env.example` needs both lines, and the run stops at startup without them.
+
+Defects found in the app are listed in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md).
 
 ## Continuous integration
 
