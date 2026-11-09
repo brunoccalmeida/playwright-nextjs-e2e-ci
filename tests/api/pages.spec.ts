@@ -7,6 +7,7 @@ import {
   validationErrorSchema,
 } from '../helpers/cms-contract'
 import { expectJson } from '../helpers/expect-json'
+import { knownIssue } from '../known-issues'
 
 // The largest id Postgres accepts for this column, so it never exists
 const UNKNOWN_ID = 2147483647
@@ -130,10 +131,23 @@ test.describe('REST API /api/pages', () => {
     test('rejects a page without its required fields, naming them', async ({ adminRequest }) => {
       const response = await adminRequest.post('/api/pages', { data: { _status: 'published' } })
 
-      const body = await expectJson(response, 400, validationErrorSchema)
-      const paths = body.errors[0].data.errors.map((error) => error.path)
-      expect(paths.sort()).toEqual(['layout', 'slug', 'title'])
+      const body = await expectJson(response, 400, errorSchema)
+      expect(body.errors[0]?.message).toBe(
+        'The following fields are invalid: Title, Content > Layout, Slug',
+      )
     })
+
+    test.fail(
+      'a validation error details each invalid field',
+      knownIssue('KI-7'),
+      async ({ adminRequest }) => {
+        const response = await adminRequest.post('/api/pages', { data: { _status: 'published' } })
+
+        const body = await expectJson(response, 400, validationErrorSchema)
+        const paths = body.errors[0].data.errors.map((error) => error.path)
+        expect(paths.sort()).toEqual(['layout', 'slug', 'title'])
+      },
+    )
 
     test('updates a page and persists the change', async ({
       request,

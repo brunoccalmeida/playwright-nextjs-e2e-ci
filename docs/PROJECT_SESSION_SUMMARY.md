@@ -15,7 +15,7 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | 60 no build de produção: 4 do template e 56 próprios (18 de contrato de API e 2 da jornada do CMS novos), em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login; 6 são `test.fail` (KI-1 a KI-6) |
+| Testes           | 61 no build de produção: 4 do template e 57 próprios (19 de API e 2 da jornada do CMS novos), em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login; 7 são `test.fail` (KI-1 a KI-7) |
 
 ## Plano de missões
 
@@ -377,3 +377,13 @@ Em 08/11/2026: [Playwright: autenticação](https://playwright.dev/docs/auth), [
 - **Registrado, sem mudança:** o KI-6 pode dar `Expected to fail, but passed` se, com o cache de `/posts` vencido (mais de 600 s) e mais de um worker, outro teste regenerar a listagem enquanto o post existe. Não ocorre no CI (`workers: 1`, build recente, suíte curta).
 
 Depois das correções: `pnpm check` verde, jornada com `--repeat-each=10` deu 11 de 11 (com o `setup`) e a suíte inteira com workers padrão deu 61 de 61.
+
+### Falha no primeiro CI (KI-7)
+
+- **Erro observado:** `rejects a page without its required fields` reprovou nas 3 tentativas: o `400` veio só com `{errors:[{message}]}`, sem `name` e `data`.
+- **Causa raiz:** a forma do erro depende da primeira rota que inicializa a Payload no processo. Com `/admin/login` primeiro, a resposta perde os detalhes; com `/api/pages`, `/` ou `/posts` primeiro, vem completa (`/` e `/posts` são estáticas e não inicializam a Payload). O `formatErrors` só mantém os campos com `instanceof ValidationError`; cópias separadas da classe por empacotamento são inferência.
+- **Por que passou localmente:** todas as execuções reusaram um servidor que subi à mão, cujo primeiro acesso foi `/api/pages`. No CI o `webServer` sobe o processo e o `setup` entra primeiro no admin. Build limpo no Windows e imagem do CI em Linux, ambos com a API primeiro, deram resposta completa: não era o sistema operacional.
+- **Correção:** o contrato afirma o que vale nos dois estados (400 e a mensagem com os campos), e a perda de detalhes é o `test.fail` do KI-7. Com a API primeiro: `Expected to fail, but passed`. Mutação da mensagem: `Expected: "...Probe, Content > Layout, Slug"`.
+- **Prevenção:** validar com `CI=1` e sem servidor no ar, que é como o CI roda. Um servidor reusado carrega o estado de quem o usou antes.
+
+Validação em modo CI: 62 de 62, e com `--repeat-each=3 --retries=0`, 184 de 184 (61 × 3, mais 1 do `setup`).

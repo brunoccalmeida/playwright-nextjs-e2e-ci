@@ -55,3 +55,11 @@ Issues are numbered in the order they were found.
 - **Cause:** `/posts` is `force-static` with `revalidate = 600` in `src/app/(frontend)/posts/page.tsx`, and the `revalidatePost` hook in `src/collections/Posts/hooks/revalidatePost.ts` only invalidates `/posts/<slug>` and the sitemap tag.
 - **Impact:** moderate. Readers cannot find a new post from the listing for at least 10 minutes, and the first request after that still gets the old list while the page regenerates.
 - **Test:** `a published post appears in the posts listing`, in `tests/e2e/cms.admin.spec.ts`.
+
+## KI-7: REST validation errors lose their field details once the admin panel has loaded first
+
+- **Observed:** when the first route to initialize Payload in a server process is an admin page, a `400` from the REST API has only `{"errors":[{"message":"The following fields are invalid: ..."}]}`. When an API route comes first, the same request also returns `name` and `data.errors`, with the path and message of each field. The state lasts until the server restarts. Static routes such as `/` and `/posts` do not count, because they do not initialize Payload.
+- **Expected:** the error body does not depend on which route was requested first, and clients can map each error to its field.
+- **Cause:** `formatErrors` in `payload/dist/utilities/formatErrors.js` only keeps `name` and `data` when `incoming instanceof ValidationError`. The likely reason it is false is that the admin and API routes get separate bundled copies of the class. The dependence on the first route is measured; the separate copies are inferred.
+- **Impact:** low. The status and the summary message stay correct, but a REST client cannot highlight individual fields.
+- **Test:** `a validation error details each invalid field`, in `tests/api/pages.spec.ts`.
