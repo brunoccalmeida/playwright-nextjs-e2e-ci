@@ -8,14 +8,14 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 2 — CI no GitHub Actions (#3), concluída com o merge do PR da missão                                                                                              |
-| Próxima missão   | Missão 3 — E2E da homepage (#4)                                                                                                                                          |
-| PRs abertos      | Dependabot #12 a #16 e #19, à espera de avaliação com o job `e2e` no gate, um por vez; o #19 (`next` 16.4.1) ficou obsoleto com a 16.4.3 da `main`; o #12 precisa da imagem do Playwright atualizada (#21)                                             |
+| Missão atual     | Missão 3 — E2E da homepage (#4), concluída com o merge do PR da missão                                                                                                   |
+| Próxima missão   | Missão 4 — Acessibilidade e teclado (#5)                                                                                                                                 |
+| PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | Os 4 E2E do template rodam no CI contra o build de produção; a suíte própria começa na Missão 3                                                                          |
+| Testes           | 17 E2E no build de produção: 4 do template e 13 próprios, em `chromium`, `mobile` e `reduced-motion`; 2 são `test.fail` (KI-1 e KI-2)                                    |
 
 ## Plano de missões
 
@@ -191,3 +191,52 @@ Em 08/11/2026: [Playwright: CI](https://playwright.dev/docs/ci), [Docker](https:
 - **Aplicado:** o relatório publicado é o da última execução da `main` que chegou aos testes, não o da última execução.
 - **Aplicado:** o empacotamento para o Pages não rodaria em nenhum PR. Provado com uma sonda, e o deploy real fica para conferir no primeiro run da `main`.
 - **Descartado por decisão do usuário:** mudar o texto "Um PR aberto por vez". A regra continua, e as exceções entram pela regra geral de desvio com justificativa registrada.
+
+## Missão 3 (#4)
+
+### Decisões
+
+- **Escopo adaptado ao template, como a issue pede:** não há menu mobile, dialog, estado de scroll nem elemento `fixed`/`sticky` no frontend (`grep` em `src/`; o `HeaderNav` é uma `<nav>` simples). Esses itens saíram, e nenhum componente foi inventado. No lugar de "elementos fixos visíveis", o projeto `mobile` confere que a navegação do header cabe na tela.
+- **Config própria em `config/playwright.config.ts`, com `webServer: pnpm start`.** O `playwright.config.ts` do template fica como gerado, sem uso. `reuseExistingServer: !process.env.CI` é o padrão da doc. Os passos `Start the app` e `Wait for the app` saíram do CI: quem sobe o servidor agora é o Playwright, e sem fallback para `dev` aquele risco deixou de existir. O log do servidor vai para a saída do passo de teste (`stdout: 'pipe'`).
+- **`NODE_ENV=production` foi para o script `test:e2e`:** antes só o CI definia. Agora `pnpm test:e2e` local também não faz `push` no banco migrado.
+- **Projetos por arquivo (`testMatch`):** `*.mobile.spec.ts` e `*.reduced-motion.spec.ts` têm projeto próprio; o `chromium` ignora esses arquivos. Repetir tudo em cada projeto gastaria tempo sem cobrir regra nova.
+- **Ordem com `toContainText([...])`:** com array, a asserção exige os itens em ordem, num subconjunto dos elementos. Assim a estrutura fica presa e os cards de post (que a Missão 5 pode mudar) não quebram o teste.
+- **Links por `getByRole('link')`** com `evaluateAll` para ler os `href`, deduplicados e checados em paralelo via `request`. Uma lista mínima obrigatória (`arrayContaining`) impede que uma coleta vazia passe sem checar nada.
+- **URLs de 404 com `randomUUID`:** o primeiro render é o que pode dar errado, e uma URL repetida poderia vir do cache de uma execução anterior.
+- **Sem `toBeInViewport` no `mobile`:** ver o achado abaixo.
+
+### Como o RED foi visto
+
+Primeiro passo: `config/playwright.config.ts does not exist`. Depois, a primeira execução real reprovou 4 testes: 2 por bug do teste (slug errado de `dollar-and-sense`) e 2 por bug do app, confirmados sem marcação antes de virar `test.fail`.
+
+| Alvo                        | Mutação                                  | Erro observado                                     |
+| --------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| Ordem das seções            | `Core features` trocado por `Recent posts` | Diff do `toContainText`                            |
+| Cards                       | Caminho de um post                       | `Expected: "/posts/probe"`                         |
+| Links, status               | Caminho quebrado incluído                | `"path": "/broken-probe", "status": 404`           |
+| Links, cobertura            | Link obrigatório inexistente             | `ArrayContaining` reprova                          |
+| Status do 404               | `toBe(404)` para `toBe(200)`             | `Expected: 200, Received: 404`                     |
+| Layout do 404               | `contentinfo` trocado por `dialog`       | `element(s) not found`                             |
+| Voltar para a home          | Texto esperado                           | `Expected: "Probe"`                                |
+| `test.fail` percebe correção | Expectativa do KI-1 igual ao bug         | `Expected to fail, but passed`                     |
+| Viewport                    | Largura 500 na config                    | `"width": 500`                                     |
+| Scroll horizontal           | Elemento de 2000 px injetado             | `Expected: 0, Received: 1625`                      |
+| Navegação na tela           | `nav` deslocada 400 px                   | `Expected: <= 0, Received: 287.65625`              |
+| Projeto `reduced-motion`    | `reducedMotion: 'no-preference'`         | `Expected: true, Received: false`                  |
+| Sem animação                | Animação CSS injetada                    | `Expected: 0, Received: 1`                         |
+
+Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 51 de 51.
+
+### Achados
+
+- **KI-1 e KI-2** em `docs/KNOWN_ISSUES.md`. O KI-2 vem de o app ter dois root layouts e nenhum `not-found` na raiz: URL sem rota não passa pelo `(frontend)/not-found.tsx`.
+- **`toBeInViewport` não pega transbordo com `isMobile`.** A primeira versão do teste passou com a `nav` fora da tela: o `innerWidth` foi de 375 a 759 e o `IntersectionObserver` seguiu com ratio 1. Só a mutação revelou. O `clientWidth` fica na largura do aparelho e é a referência certa.
+- **`admin.e2e.spec.ts` não aguenta cópias paralelas:** usa e-mail fixo com `delete` e `create`, e reprova com `ValidationError: email` em `--repeat-each` sem `--workers=1`. Não afeta o CI (`workers: 1`) nem uma execução normal. Spec congelado: repetir a suíte sempre com `--workers=1`.
+- **`--reporter` na linha de comando substitui os reporters da config:** o `playwright-report/` só é gerado sem essa flag.
+- **O cache de navegadores é compartilhado entre projetos**, e cada versão do Playwright pede o seu binário. O erro `Executable doesn't exist` se resolve com `pnpm exec playwright install chromium`, agora no README.
+- **`.env` local desatualizado:** segredos curtos reprovam na validação, inclusive em `pnpm test:e2e`, que agora valida o ambiente ao carregar a config. Na sessão, os valores vieram de variáveis de processo com segredos descartáveis, como no CI; o `.env` é travado para o agente e não foi lido nem alterado.
+- **Nova missão pedida pelo usuário:** skills para as fontes de melhores práticas mais consultadas (#25).
+
+### Fontes consultadas
+
+Em 08/11/2026: [Playwright: webServer](https://playwright.dev/docs/test-webserver), [emulação](https://playwright.dev/docs/emulation), [projetos](https://playwright.dev/docs/test-projects), [LocatorAssertions](https://playwright.dev/docs/api/class-locatorassertions) e [APIRequestContext](https://playwright.dev/docs/api/class-apirequestcontext); [Next.js: not-found](https://nextjs.org/docs/app/api-reference/file-conventions/not-found). A página de `test.fail` respondeu 503; a assinatura `test.fail(título, detalhes, corpo)` foi confirmada pelo `tsc` e pela execução.
