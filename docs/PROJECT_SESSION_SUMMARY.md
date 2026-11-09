@@ -8,14 +8,14 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 3 — E2E da homepage (#4), concluída com o merge do PR da missão                                                                                                   |
-| Próxima missão   | Missão 4 — Acessibilidade e teclado (#5)                                                                                                                                 |
+| Missão atual     | Missão 4 — Acessibilidade e teclado (#5), concluída com o merge do PR da missão                                                                                          |
+| Próxima missão   | Missão 5 — CMS de ponta a ponta e API (#6)                                                                                                                               |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | 17 E2E no build de produção: 4 do template e 13 próprios, em `chromium`, `mobile` e `reduced-motion`; 2 são `test.fail` (KI-1 e KI-2)                                    |
+| Testes           | 40 E2E no build de produção: 4 do template e 36 próprios, em `chromium`, `mobile` e `reduced-motion`; 5 são `test.fail` (KI-1 a KI-5)                                    |
 
 ## Plano de missões
 
@@ -247,3 +247,75 @@ Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 51
 ### Fontes consultadas
 
 Em 08/11/2026: [Playwright: webServer](https://playwright.dev/docs/test-webserver), [emulação](https://playwright.dev/docs/emulation), [projetos](https://playwright.dev/docs/test-projects), [LocatorAssertions](https://playwright.dev/docs/api/class-locatorassertions) e [APIRequestContext](https://playwright.dev/docs/api/class-apirequestcontext); [Next.js: not-found](https://nextjs.org/docs/app/api-reference/file-conventions/not-found). A página de `test.fail` respondeu 503; a assinatura `test.fail(título, detalhes, corpo)` foi confirmada pelo `tsc` e pela execução.
+
+## Missão 4 (#5)
+
+### Decisões
+
+- **Escopo adaptado ao template, como na Missão 3:** o frontend não tem tabs nem dialog. O único widget composto é o seletor de tema (Radix Select), testado contra o padrão _select-only combobox_ da WAI-ARIA. O `/admin` é produto da Payload, não do template, e ficou fora das varreduras; a jornada do admin é da Missão 5.
+- **Fixture `scan` (`tests/helpers/axe.ts`), no formato da doc do Playwright:** devolve regra + alvo, curto e estável, e anexa o resultado completo ao relatório.
+- **Tags até `wcag22aa`:** a doc para na 2.1, e a 2.2 é a versão vigente (julgamento nosso). Em axe 4.14.0 essa tag só acrescenta `target-size`.
+- **Como isolar uma violação conhecida sem cegar a varredura:** `exclude` só nos `<span>` de número de linha (KI-3), porque `disableRules('color-contrast')` deixaria a página inteira sem contraste. Um `toBeVisible` no mesmo seletor impede que a exclusão aponte para algo que não existe mais. No KI-4 foi `disableRules(['aria-hidden-focus'])`, só no estado com o popup aberto: o alvo são `header`, `main` e `footer`, e `exclude` neles tiraria tudo da varredura.
+- **Scan nos dois temas** (`colorScheme`), porque contraste muda com o tema. Antes de cada varredura, o teste confere `data-theme`: a preferência emulada, sozinha, não prova qual tema foi varrido.
+- **Sem `mobile` na varredura (YAGNI):** o layout muda pouco e o projeto `mobile` já cobre transbordo. Reavaliar se surgir componente próprio de mobile.
+- **`expect-expect` com `assertFunctionPatterns`** para contar o helper `expectFocusWalk`, opção da própria regra. A sonda confirma que teste sem asserção continua reprovando.
+
+### Como o RED foi visto
+
+Primeiro passo: `Cannot find module '.../helpers/axe'`. A primeira varredura real reprovou em `post` (linhas de código) e, uma vez em quatro, em `contact`.
+
+KIs confirmados sem marcação antes de virar `test.fail`:
+
+| KI   | Erro observado                                                         |
+| ---- | ---------------------------------------------------------------------- |
+| KI-3 | `color-contrast` 2,02 em `.token-line ... .select-none`                |
+| KI-4 | `aria-hidden-focus` em `header`, `.pt-24` e `footer`                   |
+| KI-5 | `toHaveCSS`: `Expected "1", Received "0"`                              |
+
+Mutações, todas desfeitas:
+
+| Alvo                       | Mutação                                    | Erro observado                           |
+| -------------------------- | ------------------------------------------ | ---------------------------------------- |
+| Varredura de página        | `<img>` sem `alt` injetado                 | `image-alt: body > img`                  |
+| Exclusão do KI-3           | Mesma injeção no `post`                    | `image-alt: body > img`                  |
+| Guarda da exclusão         | Seletor inexistente                        | `element(s) not found`                   |
+| Varredura com popup aberto | Mesma injeção                              | `image-alt: body > img`                  |
+| Tema escuro aplicado       | `colorScheme` fixo em `light`              | `Expected: "dark", Received: "light"`    |
+| `test.fail` percebe correção | KI-3 varrendo `h1`                       | `Expected to fail, but passed`           |
+| Ordem do Tab               | `Full Name` trocado por `Email`            | `toBeFocused`, `Received: inactive`      |
+| Volta com Shift+Tab        | Lista sem `reverse()`                      | `toBeFocused`, `Received: inactive`      |
+| Enter no link              | URL `/contact`                             | `Received: .../posts`                    |
+| `aria-expanded`            | Valores invertidos, fechado e aberto       | `Expected: "true"`, `Expected: "false"`  |
+| `aria-controls`            | `id` `probe`                               | `Received: "radix-_R_6iivb_"`            |
+| Opções e `aria-selected`   | Ordem das opções; `false`                  | Diff do `toHaveText`; `Received: "true"` |
+| Tema escolhido             | `data-theme` `light`                       | `Received: "dark"`                       |
+| Foco volta ao fechar       | `not.toBeFocused`                          | `Received: focused`                      |
+| Tab preso no popup         | `not.toBeFocused`                          | `Received: focused`                      |
+| Escape mantém o valor      | `Enter` no lugar de `Escape`               | `Expected: "Auto", Received: "Light"`    |
+| Lint                       | Spec sem asserção                          | `playwright/expect-expect`               |
+
+Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 120 de 120.
+
+### Achados
+
+- **Contraste do seletor de tema era falso positivo.** O scan de `contact` reprovou com 4,42 por ler a `transition-[color]` do trigger no começo: a sonda mostrou a cor subindo quadro a quadro até o branco (21:1). Primeiro tratei como KI de placeholder; o teste sem marcação **passou**, e por isso o KI foi retirado. Confirmar a falha antes de marcar é o que pegou o erro.
+- **A espera medida:** sem esperar a hidratação, 1 falha em 100 varreduras; com `toHaveText('Auto')`, 100 de 100; com a espera das animações, 100 de 100. Nessa amostra a última não mostrou efeito: ela fica porque a sonda capturou as cores intermediárias, e a leitura é única.
+- **KI-5, página em branco sem JavaScript:** o axe ignora o que está invisível (com o JS bloqueado, `violations`, `incomplete` e `passes` vieram vazios). Só uma sonda que mediu o estado revelou. Varredura verde não significa página visível.
+- **No Next 16 o CSS também fica em `_next/static/chunks`:** bloquear essa pasta inteira tira os estilos.
+- **Radix põe `aria-hidden` no próprio combobox enquanto aberto:** `getByRole` para de achá-lo, daí o `includeHidden: true`.
+- **Radix move o foco num `setTimeout`:** dois `ArrowDown` seguidos saem da mesma opção. É preciso esperar o foco a cada tecla.
+- **O axe trata texto de um caractere como inconclusivo** (`shortTextContent`, `axe.js`): as linhas 1 a 9 do KI-3 têm a mesma cor e não aparecem no relatório.
+- **Não coberto:** visibilidade do indicador de foco (WCAG 2.4.7), fora do escopo da issue. O axe e os testes de foco não medem isso.
+- **O Radix Select diverge do exemplo do APG em dois pontos:** move o foco DOM para a opção em vez de usar `aria-activedescendant`, e o Tab mantém o popup aberto em vez de aceitar a opção e seguir. Os testes registram o comportamento real. Não virou KI: o APG é orientação, não critério de conformidade, e a WCAG não exige um dos dois modelos (julgamento nosso).
+- **Armadilhas de ferramenta:** o log do `webServer` se mistura ao `--reporter=json` (usar `PLAYWRIGHT_JSON_OUTPUT_NAME`); `$'` em `String.replace` tem significado especial.
+
+### Revisão independente
+
+- **Aplicado:** os testes do tema escuro não provavam o tema varrido: a mutação tinha sido uma sonda pontual, sem guarda no código. Agora `openSettled` confere `data-theme`, e a mutação foi refeita.
+- **Aplicado:** o KI-5 dizia que só o `InitTheme` define `data-theme`, mas o `ThemeProvider` também define. A dependência real é de JavaScript.
+- **Aplicado:** o comentário dizia que a diferença do Radix era permitida pelo padrão. Conferido no exemplo oficial do APG: são duas divergências, agora descritas.
+- **Descartado:** nenhum.
+
+### Fontes consultadas
+
+Em 08/11/2026: [Playwright: testes de acessibilidade](https://playwright.dev/docs/accessibility-testing); [WAI-ARIA APG: combobox](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/) e [exemplo select-only](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/); [WCAG 2.2: Focus Order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html). Regras e tags do axe conferidas em `axe-core` 4.14.0 (`axe.getRules`, `axe.js`). Critérios citados no `KNOWN_ISSUES.md`: [WCAG 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) e [`aria-hidden-focus` → 4.1.2](https://dequeuniversity.com/rules/axe/4.11/aria-hidden-focus).
