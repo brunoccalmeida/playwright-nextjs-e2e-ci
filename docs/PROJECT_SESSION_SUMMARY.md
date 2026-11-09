@@ -10,7 +10,7 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Missão atual     | Skills das fontes de melhores práticas (#25), concluída com o merge do PR da missão |
 | Próxima missão   | #31 (números do README em sincronia), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a 3.93.0 ainda é a mais recente) |
-| PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1; depois de rebaseado sobre a sentinela (#21), o `check` deve apontar a imagem a usar |
+| PRs abertos      | Dependabot #13 a #16, #23 e #36, à espera de avaliação um por vez; o #36 substituiu o #24 e sobe o Playwright para 1.64.1; o `check` dele reprova pela sentinela (#21), que indica a imagem a usar, e o `e2e` por `Executable doesn't exist` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
