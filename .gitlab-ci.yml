@@ -2,7 +2,8 @@
 # the suite is portable. GitHub stays the source of truth and runs every other
 # gate. The mirror is updated by hand, because pull mirroring needs a paid tier.
 e2e:
-  # Same image and digest as the GitHub job. It runs as root, the image default:
+  # Same image and digest as the GitHub job (pnpm check:ci-image enforces it).
+  # It runs as root, the image default:
   # the app under test is our own, and root is what the Playwright docs accept
   # for trusted sites.
   image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27

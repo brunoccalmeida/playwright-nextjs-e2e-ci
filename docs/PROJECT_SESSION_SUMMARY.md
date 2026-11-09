@@ -8,9 +8,9 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Aviso MIT da Payload no `LICENSE` (#17), concluída com o merge do PR da missão |
-| Próxima missão   | #20 (exceções do `happy-dom` no audit), a P2 de menor número; a #21 destrava o PR #24 do Dependabot |
-| PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
+| Missão atual     | Sentinela da imagem do Playwright no CI (#21), concluída com o merge do PR da missão |
+| Próxima missão   | #25 (skills de melhores práticas), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 |
+| PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1; depois de rebaseado sobre a sentinela (#21), o `check` deve apontar a imagem a usar |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
@@ -558,3 +558,51 @@ Em 09/11/2026: Playwright: [Test Agents](https://playwright.dev/docs/test-agents
 ### Fontes consultadas
 
 Em 09/11/2026: GitHub: [Licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository); [Licensee: what we look at](https://github.com/licensee/licensee/blob/main/docs/what-we-look-at.md); [choosealicense: MIT](https://choosealicense.com/licenses/mit/); [`LICENSE.md` da Payload](https://github.com/payloadcms/payload/blob/v3.93.0/LICENSE.md) na versão usada. Convenção de combinar avisos: [resposta no Software Engineering Stack Exchange](https://backiee.wasmer.app/https_softwareengineering_stackexchange_com/questions/306029/how-to-license-application-generated-from-boilerplate-code), um espelho, sem autoridade normativa.
+
+## Missão #21
+
+### Decisões
+
+- **Trocada a ordem da fila:** a #20 seria a próxima pelo desempate, mas está bloqueada. A `@lexical/headless` 0.53.0 já pede `happy-dom ^21.0.4`, só que a `@payloadcms/richtext-lexical` 3.93.0, a mais recente, fixa o Lexical em `0.50.0`. Volta a ser viável com uma Payload que adote Lexical >= 0.53.0.
+- **Sentinela (`scripts/check-ci-image.ts`) em vez de automação:** é um dos dois caminhos do "Done when". Commitar no PR do Dependabot faz ele parar de rebasear e pede credencial capaz de escrever em workflows; o Renovate cuida de `container:`, mas troca a ferramenta do repositório. Para uma correção de duas linhas numa mudança rara, nenhum dos dois compensa (YAGNI, menor privilégio; julgamento nosso).
+- **Rede só na divergência:** o caminho verde não acessa o registro, então uma queda dele não reprova PR sem relação, a mesma razão do verificador de links da Missão 8. Na divergência o job já ia reprovar, e o registro só melhora a mensagem. Se a consulta falhar, a mensagem dá a tag e o comando para obter o digest.
+- **Limite aceito: a sentinela não liga o digest à tag.** Trocar só a tag nos dois arquivos e manter o digest velho passa (exit 0, sonda abaixo), porque conferir o par exigiria rede no caminho verde. O erro não entra na `main`: o `e2e` reprova com `Executable doesn't exist`, só que sem a mensagem útil. A mensagem do fallback avisa para mudar tag e digest juntos.
+- **Exige versão exata em `package.json`:** uma faixa não diz qual tag usar. O projeto já fixa a versão exata.
+- **Exatamente uma referência por arquivo e sempre com digest:** a checagem reprova referência sem digest ou duplicada, em vez de olhar só a primeira.
+
+### Como o RED foi visto
+
+Primeiro passo: `pnpm check:ci-image` antes do arquivo existir, `ERR_MODULE_NOT_FOUND`. Sondas numa cópia no scratchpad, cada uma com exit 1, salvo as duas de controle:
+
+| Alvo                                   | Sonda                                 | Resultado observado                                       |
+| -------------------------------------- | ------------------------------------- | --------------------------------------------------------- |
+| Controle                               | Cópia intacta                         | Exit 0                                                    |
+| Caso do PR #24                         | `package.json` em 1.64.1              | `Use this image in both files`, digest `sha256:2f05f8...` |
+| Ida e volta                            | Linha sugerida colada nos dois        | Exit 0                                                    |
+| Arquivos divergentes                   | Digest diferente em um só             | `does not match`, com a imagem certa                      |
+| Sem digest                             | `@sha256:...` removido                | `must be pinned as`                                       |
+| Referência duplicada                   | Segunda imagem no arquivo             | `expected exactly one ... found 2`                        |
+| Imagem ausente                         | Linha apagada                         | `found 0`                                                 |
+| Faixa de versão                        | `^1.63.0`                             | `must be an exact version`                                |
+| Tag não publicada                      | 9.9.9                                 | `could not be read (HTTP 404)`                            |
+| Registro fora do ar                    | Host `mcr.invalid`                    | `could not be read (fetch failed)`                        |
+| Ligação no `pnpm check`                | Digest mutado no `.gitlab-ci.yml`     | `pnpm check` exit 1 com a mensagem da sentinela           |
+| Limite: tag nova, digest velho         | Só a tag trocada, nos dois e no manifesto | Exit 0, como descrito em "Limite aceito"              |
+
+### Revisão independente
+
+- **Aplicado:** o revisor apontou que tag nova com digest velho passa. Reproduzido e registrado como limite; rede no caminho verde desfaria a decisão acima. A mensagem do fallback agora pede tag e digest juntos.
+- **Aplicado:** a tabela de estado afirmava que o #24 "agora reprova no `check`". A sentinela só o alcança num run sobre uma base que já a contenha, e isso não foi observado no PR.
+- **Descartado:** nenhum. O revisor não tinha rede nem `git`: o 404 sem `Accept`, os digests e o padrão do `verifyDepsBeforeRun` foram medidos ou lidos nesta sessão, como descrito nos Achados e nas Fontes.
+
+### Achados
+
+- **O `pnpm` instala sozinho antes de rodar script:** `verifyDepsBeforeRun` tem padrão `install` no pnpm 11. Mudar o `package.json` e rodar `pnpm check` subiu `node_modules` e o lockfile para a 1.64.1. Sonda no manifesto vai para uma cópia, ou se usa outro arquivo; desfeito com `git checkout` do lockfile e `pnpm install --frozen-lockfile`.
+- **Sem `Accept`, o MCR responde 404** no manifesto da tag. Eu tinha comentado no código que viria "outra representação", de memória; a medição corrigiu.
+- **A doc do Dependabot não fala de `container:`:** o ecossistema `github-actions` cobre ações pela sintaxe de repositório e exclui `docker://`. Que ele não atualiza a imagem é inferência da doc somada ao PR #24.
+- **Para o PR #24:** ele precisa da imagem indicada pela sentinela nos dois arquivos, num commit na branch do Dependabot. Commit de terceiros faz o Dependabot parar de rebasear; a doc diz que incluir `[dependabot skip]` na mensagem deixa ele sobrescrever esses commits.
+- **`--jq` no PowerShell quebrou de novo** no início do chat: o aviso já estava neste resumo. Usar o Bash.
+
+### Fontes consultadas
+
+Em 09/11/2026: GitHub: [ecossistemas do Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories) e [PRs de atualização](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/managing-pull-requests-for-dependency-updates); [Playwright: Docker](https://playwright.dev/docs/docker); [Renovate: github-actions](https://docs.renovatebot.com/modules/manager/github-actions/); [pnpm: build settings](https://pnpm.io/settings/build); [Docker: get image manifest](https://docs.docker.com/reference/api/registry/latest/operations/GetImageManifest.md). Comportamento do MCR medido com `curl` e dependências conferidas com `npm view`.
