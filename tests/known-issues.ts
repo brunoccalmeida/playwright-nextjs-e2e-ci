@@ -7,7 +7,10 @@ export const KNOWN_ISSUES =
  * The headings of docs/KNOWN_ISSUES.md, verbatim: the link anchors come from
  * them. scripts/check-known-issues.ts (in pnpm check) keeps both in sync.
  */
-export const knownIssueTitles = {} as const
+export const knownIssueTitles = {
+  'KI-1': 'Homepage title repeats the site name',
+  'KI-2': 'Unmatched nested URLs show the default Next.js 404 page',
+} as const
 
 export type KnownIssueId = keyof typeof knownIssueTitles
 
