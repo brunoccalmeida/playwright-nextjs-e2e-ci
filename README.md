@@ -12,7 +12,7 @@ This is a personal portfolio project, not client work.
 
 | What                  | Result                                                   | Evidence                                                                                                                                                                                                                            |
 | --------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tests on `main`       | 63, all as expected, in 1.1 min                          | [HTML report](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (latest run on `main`)                                                                                                                                    |
+| Tests on `main`       | 63, all as expected                                      | [HTML report](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (latest run on `main`)                                                                                                                                    |
 | Pipeline              | 5 jobs behind one required `ci-passed` gate, 3m 12s      | [Run at `6dc73c9`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/runs/42553516022), [workflow](.github/workflows/ci.yml), [ruleset](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/rules/26807974) |
 | Bugs found in the app | 8, each with a test asserting the correct behavior       | [Known issues](docs/KNOWN_ISSUES.md)                                                                                                                                                                                                |
 | Second CI platform    | The same `e2e` job on GitLab.com, 62 of 62 at `6636fd0`  | [Job log](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/jobs/17849067385), [green pipeline](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), [`.gitlab-ci.yml`](.gitlab-ci.yml) |
@@ -25,11 +25,14 @@ This is a personal portfolio project, not client work.
 | REST API contract                         | 19    | [`tests/api/`](tests/api)                                                                                                                                        |
 | Accessibility and keyboard                | 23    | [`accessibility.spec.ts`](tests/e2e/accessibility.spec.ts), [`keyboard.spec.ts`](tests/e2e/keyboard.spec.ts)                                                     |
 | Homepage: desktop, mobile, reduced motion | 13    | [`homepage.spec.ts`](tests/e2e/homepage.spec.ts), [`.mobile`](tests/e2e/homepage.mobile.spec.ts), [`.reduced-motion`](tests/e2e/homepage.reduced-motion.spec.ts) |
+| Contact form                              | 1     | [`contact-form.spec.ts`](tests/e2e/contact-form.spec.ts)                                                                                                         |
 | CMS journey, admin panel to frontend      | 2     | [`cms.admin.spec.ts`](tests/e2e/cms.admin.spec.ts)                                                                                                               |
 | Specs that came with the template         | 4     | [`admin.e2e.spec.ts`](tests/e2e/admin.e2e.spec.ts), [`frontend.e2e.spec.ts`](tests/e2e/frontend.e2e.spec.ts)                                                     |
 | Admin login setup                         | 1     | [`auth.setup.ts`](tests/e2e/auth.setup.ts)                                                                                                                       |
 
 ![Playwright HTML report: 62 passed, 0 failed, 0 flaky, 0 skipped](docs/images/report.png)
+
+_Screenshot from the 62-test run, before KI-8 was added._
 
 ![GitHub Actions run: check, audit, secret-scan, workflow-audit and e2e leading to ci-passed](docs/images/pipeline-github.png)
 

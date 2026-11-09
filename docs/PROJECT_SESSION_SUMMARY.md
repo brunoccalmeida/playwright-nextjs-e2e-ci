@@ -491,7 +491,7 @@ Relatório completo, público e em inglês: [`docs/PLAYWRIGHT_AGENTS_EXPERIMENT.
 
 - **`--loop=claude`:** a dúvida da issue. O `--help` da 1.63.0 lista esse valor, e o exemplo com `vscode` na seção do Claude Code da doc parece erro da página.
 - **Execução em `claude -p`, decisão do usuário:** o `.mcp.json` nasce depois do início do chat, então as ferramentas não existem na sessão. O `-p` também grava o transcript, que é a evidência.
-- **Controle sem as regras (`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`):** sem ele, o resultado do healer só mostrava que o nosso `CLAUDE.md` funciona, não o que a definição de fábrica faz.
+- **Três condições no healer, mesmo bug:** regras + comentário-dica do generator (`test.fail`), regras sem comentário (propôs `test.fail`, edições negadas) e sem regras (`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, `test.fixme()`). A condição do meio partiu da `main`, para o repositório não citar o KI-8.
 - **Definições, `.mcp.json`, plano e testes gerados fora do PR (YAGNI):** a doc pede para regenerar a cada atualização do Playwright, e a ferramenta não entrou em uso.
 - **KI-8 escrito à mão, não aproveitado do gerado:** um e-mail só, porque num `test.fail` as voltas seguintes de um laço nunca rodam, e o regex aceita "e-mail", para não seguir "falhando" depois de uma correção com outra grafia.
 - **Sem asserção `toBeHidden` na mensagem genérica:** passaria no instante antes de a validação renderizar.
@@ -521,3 +521,14 @@ Validação: `pnpm check` verde e, com `CI=1`, banco novo e `.next` limpo, 63 de
 ### Fontes consultadas
 
 Em 09/11/2026: Playwright: [Test Agents](https://playwright.dev/docs/test-agents) e [classe Test](https://playwright.dev/docs/api/class-test) (`test.fixme`, `test.fail`); Claude Code: [MCP](https://code.claude.com/docs/en/mcp), [execução programática](https://code.claude.com/docs/en/headless) e [variáveis de ambiente](https://code.claude.com/docs/en/env-vars). Opções do `init-agents` e do `run-test-mcp-server` conferidas no `--help` da 1.63.0.
+
+### Revisão independente
+
+- **Aplicado, com medição nova:** comparar "com regras" e "sem regras" misturava duas variáveis, porque só a primeira tinha o comentário do generator citando `test.fail`. A condição que faltava rodou (regras, sem comentário): nada de `fixme`, e `test.fail` proposto. O relatório diz agora o que cada condição mostrou.
+- **Aplicado:** o veredito afirmava que o healer não distingue teste velho de regressão, sem nenhuma execução com o app regredido. Agora é inferência declarada, e o limite está listado.
+- **Aplicado:** "não tem outra fonte" era falso: o plano existia. O observado é que ele não consultou.
+- **Aplicado:** edição de `KNOWN_ISSUES.md` saiu de "quebra as regras", porque é o que a regra manda; virou observação sobre escopo de permissão.
+- **Aplicado:** `n` perdido no README em português, linha do `contact-form.spec.ts` na tabela por área (a soma dava 62), nota de que o screenshot é da execução de 62, e tempo de "1,1 min" retirado, pois não foi medido com 63 testes.
+- **Aplicado:** "Reproducing it" ganhou a invocação do `claude -p`, as ferramentas e as mutações.
+- **Descartado:** publicar os transcripts. Trazem caminhos locais e não acrescentam ao que o relatório resume; estão fora do repositório.
+- **Descartado:** recapturar o screenshot agora. Ele só pode mostrar 63 depois do merge publicar o relatório; a #31 trata da sincronia dos números.

@@ -14,7 +14,7 @@ Este é um projeto pessoal de portfólio, não um trabalho para cliente.
 
 | O quê                    | Resultado                                                          | Evidência                                                                                                                                                                                                                                |
 | ------------------------ | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Testes na `main`         | 63, todos como esperado, em 1,1 min                                | [Relatório HTML](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (última execução na `main`)                                                                                                                                 |
+| Testes na `main`         | 63, todos como esperado                                            | [Relatório HTML](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (última execução na `main`)                                                                                                                                 |
 | Pipeline                 | 5 jobs atrás de um único gate obrigatório, `ci-passed`, em 3min12s | [Execução em `6dc73c9`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/runs/42553516022), [workflow](.github/workflows/ci.yml), [ruleset](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/rules/26807974) |
 | Bugs encontrados no app  | 8, cada um com um teste que afirma o comportamento correto         | [Known issues](docs/KNOWN_ISSUES.md)                                                                                                                                                                                                     |
 | Segunda plataforma de CI | O mesmo job `e2e` no GitLab.com, 62 de 62 em `6636fd0`             | [Log do job](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/jobs/17849067385), [pipeline verde](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), [`.gitlab-ci.yml`](.gitlab-ci.yml)   |
@@ -27,11 +27,14 @@ Este é um projeto pessoal de portfólio, não um trabalho para cliente.
 | Contrato da REST API                          | 19     | [`tests/api/`](tests/api)                                                                                                                                        |
 | Acessibilidade e teclado                      | 23     | [`accessibility.spec.ts`](tests/e2e/accessibility.spec.ts), [`keyboard.spec.ts`](tests/e2e/keyboard.spec.ts)                                                     |
 | Homepage: desktop, mobile, movimento reduzido | 13     | [`homepage.spec.ts`](tests/e2e/homepage.spec.ts), [`.mobile`](tests/e2e/homepage.mobile.spec.ts), [`.reduced-motion`](tests/e2e/homepage.reduced-motion.spec.ts) |
+| Formulário de contato                         | 1      | [`contact-form.spec.ts`](tests/e2e/contact-form.spec.ts)                                                                                                         |
 | Jornada do CMS, do admin ao frontend          | 2      | [`cms.admin.spec.ts`](tests/e2e/cms.admin.spec.ts)                                                                                                               |
 | Specs que vieram com o template               | 4      | [`admin.e2e.spec.ts`](tests/e2e/admin.e2e.spec.ts), [`frontend.e2e.spec.ts`](tests/e2e/frontend.e2e.spec.ts)                                                     |
 | Setup de login no admin                       | 1      | [`auth.setup.ts`](tests/e2e/auth.setup.ts)                                                                                                                       |
 
 ![Relatório HTML do Playwright: 62 aprovados, 0 reprovados, 0 instáveis, 0 ignorados](docs/images/report.png)
+
+_Captura da execução de 62 testes, antes do KI-8._
 
 ![Execução no GitHub Actions: check, audit, secret-scan, workflow-audit e e2e levando ao ci-passed](docs/images/pipeline-github.png)
 
@@ -107,7 +110,8 @@ Os testes rodam contra o build de produção, então rode `pnpm build` de novo d
 A suíte entra com `E2E_ADMIN_EMAIL` e `E2E_ADMIN_PASSWORD`. Um `.env` criado antes de essas variáveis entrarem no `.env.example` precisa das duas linhas, e sem elas a execução para na inicialização.
 
 Os defeitos encontrados no app estão em [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md).
-nUm experimento com os Playwright Test Agents, incluindo onde eles conflitam com estas regras, está em [`docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md`](docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md) (em inglês).
+
+Um experimento com os Playwright Test Agents, incluindo onde eles conflitam com estas regras, está em [`docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md`](docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md) (em inglês).
 
 ## Integração contínua
 
