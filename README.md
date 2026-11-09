@@ -17,8 +17,20 @@ pnpm start
 Open <http://localhost:3000>. The admin panel is at <http://localhost:3000/admin>, and the seed creates a demo login: `demo-author@example.com` / `password`.
 
 - **Keep this order.** Static pages are generated during the build, so seeding after it leaves `/posts` empty for up to 10 minutes.
-- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:e2e`, `pnpm test:int`, including the Development section below) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
+- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:int`, including the Development section below) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
 - **Start over:** `pnpm db:down` deletes the database, then repeat from `pnpm db:up`.
+
+## Run the end-to-end tests
+
+After the steps above, up to `pnpm build`:
+
+```bash
+pnpm exec playwright install chromium   # once, and after every Playwright update
+pnpm test:e2e                           # starts `pnpm start`, or reuses a running server
+pnpm exec playwright show-report        # opens the HTML report
+```
+
+The tests run against the production build, so run `pnpm build` again after changing the app. Projects: `chromium` (desktop), `mobile` (375x812) and `reduced-motion`. Defects found in the app are listed in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md).
 
 ## Continuous integration
 
@@ -32,7 +44,7 @@ Every pull request runs these jobs, and the `ci-passed` gate requires all of the
 | `workflow-audit` | zizmor over the workflows                                                                                           |
 | `e2e`            | Migrate, seed, build, start and test in the official Playwright container, with a new Postgres and secrets per job |
 
-When `e2e` fails, the HTML report and the server log are attached to the run as an artifact. The report of the latest run on `main` that reached the tests is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
+When `e2e` fails, the HTML report is attached to the run as an artifact, and the server log is in the output of the test step. The report of the latest run on `main` that reached the tests is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
 
 The sections below are the template's original documentation.
 
