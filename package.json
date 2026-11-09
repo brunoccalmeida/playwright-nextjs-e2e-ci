@@ -32,7 +32,8 @@
     "check:known-issues": "tsx scripts/check-known-issues.ts",
     "check:agent-rules": "tsx scripts/check-agent-rules.ts",
     "check:ci-image": "tsx scripts/check-ci-image.ts",
-    "check": "pnpm run typecheck && pnpm run lint:suite && pnpm run format:check && pnpm run check:known-issues && pnpm run check:agent-rules && pnpm run check:ci-image"
+    "check:readme": "tsx scripts/check-readme-numbers.ts",
+    "check": "pnpm run typecheck && pnpm run lint:suite && pnpm run format:check && pnpm run check:known-issues && pnpm run check:agent-rules && pnpm run check:ci-image && pnpm run check:readme"
   },
   "dependencies": {
     "@payloadcms/admin-bar": "3.93.0",

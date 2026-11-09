@@ -28,6 +28,13 @@ function anchor(heading: string): string {
     .replace(/ /g, '-')
 }
 
+/** The anchor of an entry in docs/KNOWN_ISSUES.md. */
+export function knownIssueAnchor(id: KnownIssueId): string {
+  // join, not a template literal: while the map is empty (no known issues
+  // yet) the key type is `never`, which the lint rule rejects
+  return anchor([id, knownIssueTitles[id]].join(': '))
+}
+
 /**
  * Details for a test.fail() that proves a documented app bug. In the HTML
  * report the expected failure shows a red error with only a bare "fail"
@@ -36,8 +43,6 @@ function anchor(heading: string): string {
  * the report can be filtered to these tests.
  */
 export function knownIssue(id: KnownIssueId): TestDetails {
-  // join, not a template literal: while the map is empty (no known issues
-  // yet) the key type is `never`, which the lint rule rejects
   const heading = [id, knownIssueTitles[id]].join(': ')
   return {
     tag: '@known-issue',
@@ -46,7 +51,7 @@ export function knownIssue(id: KnownIssueId): TestDetails {
         type: 'Known issue',
         description: `${heading}. This test asserts the correct behaviour, so it is expected to fail until the app is fixed; the error below is the evidence of the bug.`,
       },
-      { type: 'issue', description: `${KNOWN_ISSUES}#${anchor(heading)}` },
+      { type: 'issue', description: `${KNOWN_ISSUES}#${knownIssueAnchor(id)}` },
     ],
   }
 }
