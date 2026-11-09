@@ -139,6 +139,9 @@ jobs:
       # The job runs in a container, so the service is reached by its label
       DATABASE_URL: postgresql://payload:payload@postgres:5432/payload
       NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+      # The demo author from the template's public seed, in a disposable database
+      E2E_ADMIN_EMAIL: demo-author@example.com
+      E2E_ADMIN_PASSWORD: password
     outputs:
       pages-artifact: ${{ steps.pages-artifact.outcome }}
 

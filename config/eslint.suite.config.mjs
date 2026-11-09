@@ -38,8 +38,30 @@ export default defineConfig(
     files: ['tests/**/*.ts'],
     extends: [playwright.configs['flat/recommended']],
     rules: {
-      // Counts the helper that asserts each focus stop as an assertion
-      'playwright/expect-expect': ['warn', { assertFunctionPatterns: ['^expectFocusWalk$'] }],
+      // Helpers that assert count as assertions: each focus stop, each contract
+      'playwright/expect-expect': [
+        'warn',
+        { assertFunctionPatterns: ['^expectFocusWalk$', '^expectJson$'] },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        // Input steps are titled with the value (`Fill "<value>"`), and the
+        // report is published. The value is the 1st argument on a locator and
+        // the 2nd on page/frame (`page.fill(selector, value)`).
+        ...[0, 1].flatMap((position) =>
+          ['name', 'property.name'].map((key) => ({
+            selector: `CallExpression[callee.property.name=/^(fill|type|pressSequentially|insertText)$/][arguments.${String(position)}.${key}=/password|secret|token/i]`,
+            message: 'The step title would show this secret in the report: use fillSecret.',
+          })),
+        ),
+        // An expect message becomes the step title even when the assertion
+        // passes, so one built from data (a body, a token) gets published.
+        ...['callee.name', 'callee.object.name'].map((callee) => ({
+          selector: `CallExpression[${callee}='expect'][arguments.1][arguments.1.type!='Literal'][arguments.1.type!='ObjectExpression']`,
+          message:
+            'This message is the step title even on success: use a constant, or expectJson (body only on failure).',
+        })),
+      ],
       'playwright/no-focused-test': 'error',
       'playwright/no-wait-for-timeout': 'error',
       'playwright/prefer-web-first-assertions': 'error',

@@ -8,14 +8,14 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 4 — Acessibilidade e teclado (#5), concluída com o merge do PR da missão                                                                                          |
-| Próxima missão   | Missão 5 — CMS de ponta a ponta e API (#6)                                                                                                                               |
+| Missão atual     | Missão 5 — CMS de ponta a ponta e API (#6), concluída com o merge do PR da missão |
+| Próxima missão   | Missão 6 — Paridade no GitLab CI (#7) |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | 40 E2E no build de produção: 4 do template e 36 próprios, em `chromium`, `mobile` e `reduced-motion`; 5 são `test.fail` (KI-1 a KI-5)                                    |
+| Testes           | 60 no build de produção: 4 do template e 56 próprios (18 de contrato de API e 2 da jornada do CMS novos), em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login; 6 são `test.fail` (KI-1 a KI-6) |
 
 ## Plano de missões
 
@@ -319,3 +319,61 @@ Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 12
 ### Fontes consultadas
 
 Em 08/11/2026: [Playwright: testes de acessibilidade](https://playwright.dev/docs/accessibility-testing); [WAI-ARIA APG: combobox](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/) e [exemplo select-only](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/); [WCAG 2.2: Focus Order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html). Regras e tags do axe conferidas em `axe-core` 4.14.0 (`axe.getRules`, `axe.js`). Critérios citados no `KNOWN_ISSUES.md`: [WCAG 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) e [`aria-hidden-focus` → 4.1.2](https://dequeuniversity.com/rules/axe/4.11/aria-hidden-focus).
+
+## Missão 5 (#6)
+
+### Decisões
+
+- **O contrato vem da medição:** a doc da REST API da Payload não define os corpos de resposta (só a do login). Os schemas zod em `tests/helpers/cms-contract.ts` saíram de respostas reais. Objetos abertos, para campo novo não quebrar contrato (julgamento nosso); `populatedAuthors` é estrito, porque um campo a mais ali, como e-mail, seria vazamento.
+- **`request` anônimo, admin explícito:** o projeto `api` não tem `storageState`, e quem precisa de sessão pede a fixture `adminRequest`. Assim, esquecer a sessão reprova o teste, e um teste de "anônimo não pode" nunca roda autenticado sem querer. O projeto `admin` segue o padrão da doc, com `storageState` no projeto.
+- **Dados por teste:** `createPage` e `createPost` criam com sufixo único e apagam no teardown. O teardown aceita 200 e 404 (o próprio teste pode ter apagado) e reprova no resto.
+- **A jornada edita o `hero.richText`, não o `title`:** o `title` não é renderizado no frontend. O visitante abre a página antes da edição para ela ficar em cache (`MISS → HIT`, e `MISS` depois de publicar), então o teste prova a invalidação. Arranjo pela API e ação pela UI, como recomenda a doc de API testing.
+- **`visitorPage` sem sessão, com `storageState` vazio explícito:** o que o público vê, sem a barra de admin.
+- **Posts de contrato ficam em rascunho:** publicar entraria nas listagens lidas pelos testes da homepage. CRUD completo fica em `pages`, que tem as mesmas operações. A exceção é o teste do KI-6, que apaga o post no teardown.
+- **Credenciais em `parseTestEnv`, separado de `parseEnv`:** só a execução dos testes precisa delas, e os scripts de banco não devem reprovar por isso. A validação roda na config, antes de o servidor subir.
+- **Lint adaptado do starter kit:** `no-restricted-syntax` barra segredo em `fill`/`type` e mensagem dinâmica em `expect`, porque ambos viram título de passo no relatório publicado; `expectJson` conta como asserção. `expectStatus` e `expectFound` do starter kit não vieram (YAGNI).
+
+### Como o RED foi visto
+
+Primeiro passo: `Cannot find module '.../tests/helpers/auth-state'`. KI-6 confirmado sem marcação antes de virar `test.fail`: `getByRole('link', { name: 'Post post-...' })`, `element(s) not found`; no controle, o mesmo localizador achou um post do seed e o `/posts` respondeu `x-nextjs-cache: HIT`.
+
+Mutações, todas desfeitas:
+
+| Alvo                                     | Mutação                                  | Erro observado                                     |
+| ---------------------------------------- | ---------------------------------------- | -------------------------------------------------- |
+| Cada um dos 18 testes de API             | Expectativa de status, campo ou total    | Falha na própria expectativa, teste a teste        |
+| Estado após escrita recusada e rascunhos | `totalDocs`, título e 404 no lugar de 200 | `Expected: 1, Received: 0`; `Expected HTTP 404, received 200` |
+| Passos seguintes de `refuses anonymous writes` | 403 para 401 em `PATCH` e `DELETE` | `Expected HTTP 401, received 403`                  |
+| ID no contrato                           | `string`, como em `payload-types.ts`     | `Invalid input: expected string, received number`  |
+| Autor público                            | Schema só com `id`                       | `Unrecognized key: "name"`                         |
+| Erro de validação                        | `literal('Probe')`                       | `Invalid input: expected "Probe"`                  |
+| Visitante vê a edição                    | `after` deveria sumir                    | `toBeHidden`, `Received: visible`                  |
+| Texto antigo some                        | `before` deveria continuar               | `element(s) not found`                             |
+| `test.fail` percebe correção             | Listagem procurando post do seed         | `Expected to fail, but passed`                     |
+| Senha errada                             | `E2E_ADMIN_PASSWORD=wrong`               | `setup` reprova, dependente em `did not run`       |
+| Senha ausente                            | Variável removida                        | `E2E_ADMIN_PASSWORD: is required`, antes do servidor |
+| Lint                                     | `fill(password)`, `expect(x, template)`, teste sem asserção | `use fillSecret`, `step title`, `Test has no assertions` |
+| `.gitignore`                             | `git check-ignore`                       | `/playwright/.auth/` casa com `admin.json`         |
+
+Validação: suíte inteira com `--repeat-each=3 --workers=1 --retries=0` deu 181 de 181 (60 × 3, mais 1 do `setup`: dependência não é repetida).
+
+### Achados
+
+- **KI-6:** post publicado não aparece em `/posts` por pelo menos 10 minutos.
+- **`keyboard.insertText` não funciona no Lexical:** a seleção some e o texto volta, mesmo 1,5 s depois. Não era espera. Com teclas reais (`keyboard.type`) funciona. Uma sonda que registrou o estado a cada passo mostrou isso.
+- **Anônimo recebe 403, não 401**, e rascunho anônimo responde 404: não revela que o documento existe.
+- **`.env` local desatualizado:** quem já tem `.env` precisa acrescentar `E2E_ADMIN_EMAIL` e `E2E_ADMIN_PASSWORD`; o README avisa. O agente seguiu sem ler o arquivo: variáveis de processo a partir do `.env.example`.
+- **Cada login acrescenta uma entrada em `sessions` no usuário demo.** É o único efeito sobre dados do seed, e nenhum teste lê esse campo.
+
+### Fontes consultadas
+
+Em 08/11/2026: [Playwright: autenticação](https://playwright.dev/docs/auth), [API testing](https://playwright.dev/docs/api-testing) e [fixtures](https://playwright.dev/docs/test-fixtures); [Payload: REST API](https://payloadcms.com/docs/rest-api/overview) e [operações de autenticação](https://payloadcms.com/docs/authentication/operations). `expectJson` e `fillSecret` adaptados de `playwright-qa-starter-kit`.
+
+### Revisão independente
+
+- **Aplicado:** a jornada publicava sem esperar o estado do formulário. O Lexical repassa o valor ao formulário de forma adiada, e o editor mostra o texto antes disso (leitura do código da Payload; a falha não foi reproduzida). Agora o teste espera o rascunho salvo pelo autosave conter o texto novo. Mutação: `Expected substring: "After the edit ... probe"`.
+- **Aplicado:** o teste de autor público não olhava `authors`, onde um vazamento apareceria se `Users` deixasse de ser restrito. O contrato agora aceita só ids. Mutação: `expected object, received number`.
+- **Aplicado:** o comentário do `fillSecret` omitia que o trace guarda o valor. A proteção vale só para títulos de passo, e a senha usada é a do seed público. Sonda com um reporter próprio: `Evaluate` com `fillSecret` e `Fill "password"` com `fill`. Uma primeira sonda com `--reporter=json` saiu vazia, porque esse reporter só traz `test.step`, e vazio não contou como prova.
+- **Registrado, sem mudança:** o KI-6 pode dar `Expected to fail, but passed` se, com o cache de `/posts` vencido (mais de 600 s) e mais de um worker, outro teste regenerar a listagem enquanto o post existe. Não ocorre no CI (`workers: 1`, build recente, suíte curta).
+
+Depois das correções: `pnpm check` verde, jornada com `--repeat-each=10` deu 11 de 11 (com o `setup`) e a suíte inteira com workers padrão deu 61 de 61.

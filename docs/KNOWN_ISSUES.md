@@ -47,3 +47,11 @@ Issues are numbered in the order they were found.
 - **Cause:** `src/app/(frontend)/globals.css` sets `html { opacity: 0 }` until `data-theme` is set, and only JavaScript sets it (`InitTheme`, then `ThemeProvider`). The rule prevents a flash of the wrong theme, at the cost of depending on JavaScript.
 - **Impact:** moderate. Few visitors browse without JavaScript, but for them, and on a failed bundle load, the whole site is blank.
 - **Test:** `the page is visible`, in `tests/e2e/accessibility.spec.ts`.
+
+## KI-6: A newly published post is missing from the posts listing
+
+- **Observed:** a post published through the admin or the REST API is live at `/posts/<slug>`, but `/posts` keeps serving the cached list without it (`x-nextjs-cache: HIT`).
+- **Expected:** publishing a post updates the listing that links to it.
+- **Cause:** `/posts` is `force-static` with `revalidate = 600` in `src/app/(frontend)/posts/page.tsx`, and the `revalidatePost` hook in `src/collections/Posts/hooks/revalidatePost.ts` only invalidates `/posts/<slug>` and the sitemap tag.
+- **Impact:** moderate. Readers cannot find a new post from the listing for at least 10 minutes, and the first request after that still gets the old list while the page regenerates.
+- **Test:** `a published post appears in the posts listing`, in `tests/e2e/cms.admin.spec.ts`.

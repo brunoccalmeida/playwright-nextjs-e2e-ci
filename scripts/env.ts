@@ -16,14 +16,24 @@ const envSchema = z.object({
   PREVIEW_SECRET: secret,
 })
 
+// Apart from envSchema: only the test run needs them, not the app or db scripts
+const testEnvSchema = z.object({
+  E2E_ADMIN_EMAIL: z.email({ error: 'must be an email address' }),
+  E2E_ADMIN_PASSWORD: z.string({ error: 'is required' }).min(1, { error: 'is required' }),
+})
+
 export type Env = z.infer<typeof envSchema>
+export type TestEnv = z.infer<typeof testEnvSchema>
 
 /**
  * Fails fast on a bad environment. The report names the variables and never
  * their values, because it ends up in terminals and CI logs.
  */
-export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const result = envSchema.safeParse(source)
+function parse<Schema extends z.ZodType>(
+  schema: Schema,
+  source: NodeJS.ProcessEnv,
+): z.infer<Schema> {
+  const result = schema.safeParse(source)
   if (result.success) return result.data
 
   const problems = result.error.issues.map(
@@ -32,4 +42,12 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
   throw new Error(
     `Invalid environment. Check your .env against .env.example:\n${problems.join('\n')}`,
   )
+}
+
+export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
+  return parse(envSchema, source)
+}
+
+export function parseTestEnv(source: NodeJS.ProcessEnv = process.env): TestEnv {
+  return parse(testEnvSchema, source)
 }
