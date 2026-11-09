@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Sentinela da imagem do Playwright no CI (#21), concluída com o merge do PR da missão |
-| Próxima missão   | #25 (skills de melhores práticas), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 |
+| Missão atual     | Skills das fontes de melhores práticas (#25), concluída com o merge do PR da missão |
+| Próxima missão   | #31 (números do README em sincronia), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a 3.93.0 ainda é a mais recente) |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1; depois de rebaseado sobre a sentinela (#21), o `check` deve apontar a imagem a usar |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -606,3 +606,59 @@ Primeiro passo: `pnpm check:ci-image` antes do arquivo existir, `ERR_MODULE_NOT_
 ### Fontes consultadas
 
 Em 09/11/2026: GitHub: [ecossistemas do Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories) e [PRs de atualização](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/managing-pull-requests-for-dependency-updates); [Playwright: Docker](https://playwright.dev/docs/docker); [Renovate: github-actions](https://docs.renovatebot.com/modules/manager/github-actions/); [pnpm: build settings](https://pnpm.io/settings/build); [Docker: get image manifest](https://docs.docker.com/reference/api/registry/latest/operations/GetImageManifest.md). Comportamento do MCR medido com `curl` e dependências conferidas com `npm view`.
+
+## Missão #25
+
+### Decisões
+
+- **Medido antes de escolher:** missões que citam cada domínio nas fontes deste resumo: `playwright.dev` 7, `pnpm.io` 5, `docs.github.com` 5, `payloadcms.com` 2, `nextjs.org` 1. Ficaram quatro skills: `playwright-docs`, `pnpm-docs`, `github-docs` e `payload-docs`.
+- **`nextjs.org` saiu, apesar de citado na issue:** só 1 missão (YAGNI). `w3.org`, MDN e Docker também têm 2 missões, mas não há versão fixada a alcançar nem armadilha paga (julgamento nosso). `github.com` é mistura de repositórios, não uma fonte.
+- **Rota pela versão fixada, não pelo site:** `playwright.dev` só tem a mais recente; a Payload acompanha a major estável, com a 4.x em beta; o pnpm já está na 12.x e usamos a 11. Os fontes da doc na tag (Playwright e Payload) ou na pasta da major (pnpm) respondem pela nossa versão, e deles sai a citação.
+- **`llms.txt` só onde existe e ajuda:** GitHub e Payload. Playwright e pnpm respondem 404. O da Payload acompanha a última da major, então serve para achar a página, e a leitura é na tag.
+- **Sem cópia para o Copilot:** as docs do GitHub e do VS Code listam `.claude/skills` como local de skills de projeto, e o formato é o padrão aberto Agent Skills. A exceção é o harness Local do VS Code ser o único daquele produto a ler essa pasta; outro harness lá exigiria `.github/skills`.
+- **Sem `paths` no frontmatter:** limita a ativação ao tocar em arquivos, e o "Done when" pede que uma pergunta num chat novo acione a skill.
+- **Sentinela ampliada, em `scripts/check-agent-rules.ts`:** nome válido e igual à pasta, descrição de 1 a 1024 caracteres, menos de 500 linhas e nenhuma versão fixada escrita na skill. Nome inválido falha em silêncio, segundo a doc do VS Code, e versão copiada é o "congelar" que a issue proíbe.
+- **Limite aceito da sentinela:** só pega a versão exata de Playwright, Payload, Next.js e pnpm. Escrever `11.x` ou uma versão parcial passa.
+
+### Como o RED foi visto
+
+Comparação com e sem a skill, o método da doc do Claude Code: quatro perguntas em `claude -p` novos, só leitura, modelo padrão, limite de US$ 1 e 6 minutos, antes de as skills existirem e depois.
+
+| Fonte      | Sem skill: o que citou                            | Com skill: acionou e citou                                                    |
+| ---------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Playwright | `playwright.dev/docs/test-webserver`              | `playwright-docs`; `blob/v1.63.0/docs/src/test-webserver-js.md`               |
+| pnpm       | `pnpm.io/settings/build`, `pnpm.io/11.x/...`      | `pnpm-docs`; `versioned_docs/version-11.x/settings/build.md`                  |
+| Payload    | `payloadcms.com/docs/database/*`                  | `payload-docs`; `blob/v3.93.0/docs/database/*.mdx`                            |
+| GitHub     | Páginas certas, sem a skill                       | `github-docs`; páginas certas. Não há versão a fixar: o ganho é a rota `.md`  |
+
+Custo total: US$ 1,28 sem e US$ 1,04 com as skills. É uma execução por condição, portanto mostra que funciona, não uma taxa de acionamento.
+
+Sentinela, numa cópia no scratchpad, cada sonda com exit 1 e a mensagem esperada; o controle deu exit 0:
+
+| Alvo                         | Sonda                                 | Erro observado                                   |
+| ---------------------------- | ------------------------------------- | ------------------------------------------------ |
+| Lacuna anterior              | Script da `main`, nome diferente da pasta | Exit 0: passava                              |
+| Nome                         | Diferente da pasta; pasta e `name` iguais em `Bad_Name`, `a--b` e 65 caracteres | `name must equal the directory` |
+| Descrição                    | Vazia e com 1025 caracteres           | `description must have 1 to 1024 characters`     |
+| Tamanho                      | Mais de 500 linhas                    | `keep the skill under 500 lines`                 |
+| Versão congelada             | Playwright, Payload, pnpm e Next.js no corpo; Playwright na descrição | `mentions the pinned version ...` |
+| Frontmatter                  | Removido                              | `no YAML frontmatter`                            |
+
+### Achados
+
+- **`pnpm.io/<M>.x/<página>` não prova a versão:** o HTML veio com bytes idênticos para 9.x, 11.x, 12.x e sem versão, e o `canonical` aponta para a URL sem versão. Na base, o agente notou que `/11.x/` trazia notas da v12, confirmou o valor pelas notas de lançamento da 11.0 e acertou. O RED do pnpm é só a citação, que não prova a versão; a resposta em si estava certa, ao custo de um desvio.
+- **O `exit 0` enganou de novo:** a primeira rodada da base saiu com 0 porque o `claude` não está no `PATH` do Git Bash e o script terminava em `wait`. Agora o script usa `CLAUDE_CODE_EXECPATH` e devolve o status de cada execução. O arquivo vazio foi o sinal.
+- **Não verificado:** o acionamento no Copilot. Formato e pasta seguem a doc, mas nenhuma pergunta foi feita a ele.
+- **`--bare` esconde as skills:** a doc recomenda esse modo para scripts, mas ele não lista skills e serviria de falso RED. A medição usou o modo normal, que carrega o `~/.claude` como um chat comum.
+
+### Fontes consultadas
+
+Em 09/11/2026: Claude Code: [skills](https://code.claude.com/docs/en/skills) e [execução programática](https://code.claude.com/docs/en/headless); GitHub: [About agent skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) e [Add skills](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills); [VS Code: agent skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills); [especificação Agent Skills](https://agentskills.io/specification). Rotas de cada fonte medidas com `curl` e `gh api`: [`llms.txt` do GitHub](https://docs.github.com/llms.txt), [da Payload](https://payloadcms.com/llms.txt) e [`versions.json` do pnpm](https://raw.githubusercontent.com/pnpm/pnpm.io/main/versions.json). Bloqueio da #20 medido com `npm view @payloadcms/richtext-lexical`.
+
+### Revisão independente
+
+- **Aplicado:** o resumo afirmava que o agente da base citou `/11.x/` acreditando ter a 11. A resposta dele mostra o contrário: notou a divergência e compensou. Texto corrigido.
+- **Aplicado:** a checagem de versão só olhava o corpo, e a descrição é a parte sempre carregada. Agora cobre as duas; a sonda está na tabela.
+- **Aplicado:** faltava sonda do limite de 64 caracteres, e a tabela não dizia que pasta e `name` mudaram juntos, o que é necessário para exercitar o regex. Sondas refeitas assim.
+- **Aplicado:** "e já há uma beta" saiu da descrição da `payload-docs`: era fato datado, justamente o que a issue proíbe congelar.
+- **Descartado:** nenhum. O revisor não teve rede; os 404 de `llms.txt`, os bytes do `pnpm.io` e as docs do Copilot foram medidos ou lidos nesta sessão.
