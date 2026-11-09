@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Missão 5 — CMS de ponta a ponta e API (#6), concluída com o merge do PR da missão |
-| Próxima missão   | Missão 6 — Paridade no GitLab CI (#7) |
+| Missão atual     | Missão 6 — Paridade no GitLab CI (#7), concluída com o merge do PR da missão |
+| Próxima missão   | Missão 8 — Documentação e vitrine (#9), a P1 restante |
 | PRs abertos      | Dependabot #13 a #16, #23 e #24, à espera de avaliação um por vez; o #24 sobe o Playwright para 1.64.1 e reprova no `e2e` até a imagem ser atualizada (#21)              |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -387,3 +387,43 @@ Depois das correções: `pnpm check` verde, jornada com `--repeat-each=10` deu 1
 - **Prevenção:** validar com `CI=1` e sem servidor no ar, que é como o CI roda. Um servidor reusado carrega o estado de quem o usou antes.
 
 Validação em modo CI: 62 de 62, e com `--repeat-each=3 --retries=0`, 184 de 184 (61 × 3, mais 1 do `setup`).
+
+## Missão 6 (#7)
+
+### Decisões
+
+- **GitLab no mínimo necessário, só como prova de portfólio (decisão do usuário):** conta Free, sem gasto. Investir mais só se um trabalho pago pedir; missão futura não amplia isto sem o usuário pedir.
+- **Só o job `e2e`:** é o que a issue pede. `check`, `audit`, `secret-scan` e `workflow-audit` seguem no GitHub, que é a fonte da verdade. Sem cache, painel JUnit ou Pages (YAGNI).
+- **Espelho por `git push` manual, remote `gitlab`:** o pull mirroring exige Premium, e uma sincronização automática guardaria um token do GitLab no GitHub. Por isso o README aponta para uma pipeline num commit, não para um badge.
+- **Node e pnpm instalados no job, a partir de `.node-version` e `packageManager`:** a imagem traz Node 24.20, abaixo do `engines` (`^22.23.4 || >=24.22.1`). `pnpm runtime set node` é o caminho da doc do pnpm. Uma guarda compara a versão, porque o Node da imagem rodaria a suíte sem reclamar.
+- **Root no container:** padrão da imagem, aceito pela doc do Playwright para sites confiáveis, e o app testado é o nosso. Evita tratar a posse do diretório clonado.
+- **`alias: postgres` explícito:** o nome do serviço tem digest, e a doc só descreve o nome derivado de imagem com tag.
+- **`.gitlab-ci.yml` no `format` e no `format:check`:** a lista do Prettier é por caminho, então o arquivo ficaria sem portão.
+
+### Como o RED foi visto
+
+| Alvo                    | Sonda                                | Erro observado                                                          |
+| ----------------------- | ------------------------------------ | ----------------------------------------------------------------------- |
+| `PATH` do pnpm          | `export PATH` removido               | `pnpm runtime` sai com 1: `global bin directory ... is not in PATH`     |
+| Guarda de versão        | Instalação do Node removida          | `test` sai com 1 no Node da imagem                                      |
+| Formatação              | Linha mal formatada no YAML          | `format:check` sai com 1 e aponta `.gitlab-ci.yml`                      |
+| Job e artifact (GitLab) | Spec que falha, commit só no espelho | `Expected: "green"`, `script_failure`, artifact de 32 arquivos baixado sem login |
+
+Pipelines no GitLab.com: [verde em `6636fd0`](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), 62 de 62, job de 238 s; [vermelha da sonda](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043130956), 276 s. Antes, a simulação local do arquivo real (Docker, serviço por alias, 64 MB de `/dev/shm`, sem `--init` nem `--ipc=host`) deu 62 de 62 em 114 s.
+
+### Achados
+
+- **Bloqueio de verificação não gera job:** a pipeline fica `failed` com lista de jobs vazia, e a API pública não explica. O motivo está em `failure_reason` no JSON da página (`/-/pipelines/<id>.json`): `The pipeline failed due to the user not being verified`.
+- **Projeto não pode ser mais visível que o grupo:** a opção `Public` fica bloqueada até o grupo ser público.
+- **`pnpm runtime -g` exige `$PNPM_HOME/bin` no `PATH`** e reprova sem ele.
+- **Mesmo SHA em branch nova dispara outra pipeline**, sem commit vazio.
+- **O primeiro push define a branch padrão do GitLab:** ficou `ci/gitlab-parity`. Enviar a `main` depois do merge e trocar a padrão na interface.
+- **Sem `--ipc=host` e `--init` no GitLab:** as páginas lidas da doc só mostram `image:docker:user` como opção do container. Não medi o `/dev/shm` do runner hospedado; a suíte passou nele sem o `--ipc=host`. O `--init` recolhe processos zumbis, e aqui a VM do job é descartada ao final (julgamento nosso: o efeito não compensa um contorno).
+- **Pendência autorizada pelo usuário, a fazer logo após o merge:** descrição do repositório com "GitLab CI" e tópico `gitlab-ci`, último item do "Done when" da #7. Se a #7 estiver fechada e o repositório sem o tópico, fazer isso antes da próxima missão.
+- **Sonda inválida:** `git commit --no-verify=false` reprovou, e o push seguiu com o commit anterior. A pipeline deu verde e gastou 4 minutos. Encadear com `&&` e comparar o SHA antes do push.
+- **`tail` esconde exit code outra vez:** induziu um comentário falso no YAML. A sonda desmentiu e o comentário foi corrigido.
+- **Manutenção:** o digest da imagem passa a existir em dois arquivos (anotado na #21).
+
+### Fontes consultadas
+
+Em 08/11/2026: GitLab: [serviço PostgreSQL](https://docs.gitlab.com/ci/services/postgres/), [services](https://docs.gitlab.com/ci/services/), [referência do YAML](https://docs.gitlab.com/ci/yaml/), [runners Linux](https://docs.gitlab.com/ci/runners/hosted_runners/linux/), [espelhamento](https://docs.gitlab.com/user/project/repository/mirror/), [compute minutes](https://docs.gitlab.com/ci/pipelines/compute_minutes/), [debugging](https://docs.gitlab.com/ci/debugging/), [visibilidade](https://docs.gitlab.com/user/public_access/) e [preços](https://about.gitlab.com/pricing/); Playwright: [CI](https://playwright.dev/docs/ci) e [Docker](https://playwright.dev/docs/docker); pnpm: [CI](https://pnpm.io/continuous-integration), [runtime](https://pnpm.io/cli/runtime) e [instalação](https://pnpm.io/installation).

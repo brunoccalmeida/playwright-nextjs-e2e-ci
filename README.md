@@ -50,6 +50,10 @@ Every pull request runs these jobs, and the `ci-passed` gate requires all of the
 
 When `e2e` fails, the HTML report is attached to the run as an artifact, and the server log is in the output of the test step. The report of the latest run on `main` that reached the tests is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
 
+### GitLab CI
+
+The `e2e` job also runs on GitLab.com, from [`.gitlab-ci.yml`](.gitlab-ci.yml): same Playwright image, a Postgres service and the same migrate, seed, build and test sequence, on a Free-tier hosted runner. The container setup differs: it runs as root, without the `--init` and `--ipc=host` flags. GitHub stays the source of truth and runs every other gate. The [GitLab mirror](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci) is updated by hand, so the proof is one pipeline at one commit, not a live status: [green pipeline at `6636fd0`](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), and a [deliberately failing one](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043130956) that shows the job going red and keeping the report as an artifact.
+
 The sections below are the template's original documentation.
 
 This is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website). Use it to power websites, blogs, or portfolios from small to enterprise. This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready website.
