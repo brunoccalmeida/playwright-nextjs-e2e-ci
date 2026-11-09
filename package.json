@@ -31,7 +31,8 @@
     "db:seed": "cross-env NODE_ENV=production NODE_OPTIONS=--no-deprecation payload run scripts/seed.ts",
     "check:known-issues": "tsx scripts/check-known-issues.ts",
     "check:agent-rules": "tsx scripts/check-agent-rules.ts",
-    "check": "pnpm run typecheck && pnpm run lint:suite && pnpm run format:check && pnpm run check:known-issues && pnpm run check:agent-rules"
+    "check:ci-image": "tsx scripts/check-ci-image.ts",
+    "check": "pnpm run typecheck && pnpm run lint:suite && pnpm run format:check && pnpm run check:known-issues && pnpm run check:agent-rules && pnpm run check:ci-image"
   },
   "dependencies": {
     "@payloadcms/admin-bar": "3.93.0",
