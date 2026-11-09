@@ -38,6 +38,8 @@ export default defineConfig(
     files: ['tests/**/*.ts'],
     extends: [playwright.configs['flat/recommended']],
     rules: {
+      // Counts the helper that asserts each focus stop as an assertion
+      'playwright/expect-expect': ['warn', { assertFunctionPatterns: ['^expectFocusWalk$'] }],
       'playwright/no-focused-test': 'error',
       'playwright/no-wait-for-timeout': 'error',
       'playwright/prefer-web-first-assertions': 'error',

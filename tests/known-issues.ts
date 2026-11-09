@@ -10,6 +10,9 @@ export const KNOWN_ISSUES =
 export const knownIssueTitles = {
   'KI-1': 'Homepage title repeats the site name',
   'KI-2': 'Unmatched nested URLs show the default Next.js 404 page',
+  'KI-3': 'Code block line numbers have insufficient contrast',
+  'KI-4': 'Open theme selector leaves focusable content inside aria-hidden regions',
+  'KI-5': 'Pages are blank when JavaScript is unavailable',
 } as const
 
 export type KnownIssueId = keyof typeof knownIssueTitles
