@@ -444,7 +444,8 @@ Em 08/11/2026: GitLab: [serviço PostgreSQL](https://docs.gitlab.com/ci/services
 
 - **Título (63/70):** Playwright E2E suite and CI for a Next.js / Payload CMS website
 - **Papel (51/100):** QA Automation Engineer (personal portfolio project)
-- **Descrição (512/600):** Personal project, not client work. Playwright + TypeScript suite for the official Payload CMS website template: 62 tests covering the REST API contract, accessibility (axe, WCAG 2.2 AA), keyboard use, a mobile viewport and an admin-to-frontend journey, on the production build with a new Postgres per CI job. It found 7 real bugs, each documented and pinned by a test. Runs on GitHub Actions behind 5 quality gates, and on GitLab CI. Public report and evidence: github.com/brunoccalmeida/playwright-nextjs-e2e-ci
+- **Descrição (532/600):** Personal project, not client work. Playwright + TypeScript suite for the official Payload CMS website template: 62 tests covering the REST API contract, accessibility (axe, WCAG 2.2 AA), keyboard use, a mobile viewport and an admin-to-frontend journey, on the production build with a new Postgres per CI run. It found 7 real bugs, each documented and pinned by a test. Runs on GitHub Actions behind 5 quality gates; its E2E job also passed on GitLab CI. Public report and evidence: github.com/brunoccalmeida/playwright-nextjs-e2e-ci
+- **Pendência do usuário:** publicar o item no perfil. O texto e as imagens estão prontos; nada foi enviado ao Upwork.
 - **Skills:** Playwright, TypeScript, GitHub Actions, GitLab CI, Accessibility Testing. Os nomes exatos dependem da lista do formulário.
 - **Mídia:** `docs/images/report.png` (capa), `pipeline-github.png`, `pipeline-gitlab.png` e o link do repositório.
 
@@ -457,7 +458,19 @@ Em 08/11/2026: GitLab: [serviço PostgreSQL](https://docs.gitlab.com/ci/services
 | Link externo               | Pipeline `9999999999`                                   | `HTTP 404`                                   |
 | Paridade EN e pt-BR        | Link alterado em um só idioma                           | `only in README.md`, `only in README.pt-BR.md` |
 
-Com os arquivos reais: 44 links distintos (12 externos), todos resolvem, e as duas línguas citam a mesma evidência.
+Com os arquivos reais, depois da revisão: 49 links distintos (16 externos), todos resolvem, e as duas línguas citam a mesma evidência.
+
+### Revisão independente
+
+- **Aplicado:** "62 of 62" no GitLab apontava para uma pipeline com a aba `Tests 0`. Agora há link para o log do job, conferido: `62 passed (1.4m)`.
+- **Aplicado:** "latest run" era um link fixo, que ficaria falso no merge seguinte.
+- **Aplicado:** "required" e "blocks bad merges" não tinham prova. Agora apontam para o ruleset, que exige `ci-passed`, e para o PR #10, com o commit-sonda barrado.
+- **Aplicado:** "seen failing first" exagerava: parte dos testes nasceu verde e foi vista falhando por mutação.
+- **Aplicado:** o relatório só fica anexado quando os testes chegam a rodar, não em "any failing run"; "every CI job" valia só para o `e2e`.
+- **Aplicado:** o KI-7 está na dependência Payload, não no template gerado.
+- **Aplicado:** o texto do Upwork sugeria execução contínua no GitLab, com os mesmos portões.
+- **Aplicado:** a afirmação sobre `src/` ganhou link de comparação, e a das dependências, o commit `51c76a2`.
+- **Descartado:** trocar `Closes #9` por `Refs #9`. O "Done when" da issue é o README com evidências, e publicar no Upwork é ato do usuário, por decisão dele. A pendência está registrada acima e no pedido de merge.
 
 ### Achados
 
