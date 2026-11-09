@@ -12,13 +12,13 @@ This is a personal portfolio project, not client work.
 
 | What                  | Result                                                   | Evidence                                                                                                                                                                                                                            |
 | --------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tests on `main`       | 62, all as expected, in 1.1 min                          | [HTML report](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (latest run on `main`)                                                                                                                                    |
+| Tests on `main`       | 63, all as expected, in 1.1 min                          | [HTML report](https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/) (latest run on `main`)                                                                                                                                    |
 | Pipeline              | 5 jobs behind one required `ci-passed` gate, 3m 12s      | [Run at `6dc73c9`](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/actions/runs/42553516022), [workflow](.github/workflows/ci.yml), [ruleset](https://github.com/brunoccalmeida/playwright-nextjs-e2e-ci/rules/26807974) |
-| Bugs found in the app | 7, each with a test asserting the correct behavior       | [Known issues](docs/KNOWN_ISSUES.md)                                                                                                                                                                                                |
+| Bugs found in the app | 8, each with a test asserting the correct behavior       | [Known issues](docs/KNOWN_ISSUES.md)                                                                                                                                                                                                |
 | Second CI platform    | The same `e2e` job on GitLab.com, 62 of 62 at `6636fd0`  | [Job log](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/jobs/17849067385), [green pipeline](https://gitlab.com/brunoccalmeida1/playwright-nextjs-e2e-ci/-/pipelines/3043123721), [`.gitlab-ci.yml`](.gitlab-ci.yml) |
 | Stack                 | Playwright 1.63, Next.js 16.4, Payload 3.93, Postgres 18 | [`package.json`](package.json), [`compose.yaml`](compose.yaml)                                                                                                                                                                      |
 
-**About "62 green":** the 7 bug tests use `test.fail()`, so the report counts them as passed while the bug exists. If a bug gets fixed, its test starts failing and asks for the marker to be removed.
+**About "63 green":** the 8 bug tests use `test.fail()`, so the report counts them as passed while the bug exists. If a bug gets fixed, its test starts failing and asks for the marker to be removed.
 
 | Area                                      | Tests | Where                                                                                                                                                            |
 | ----------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -60,6 +60,7 @@ All are in the generated app or its Payload dependency, and each one links to it
 | [KI-5](docs/KNOWN_ISSUES.md#ki-5-pages-are-blank-when-javascript-is-unavailable)                                        | Pages are blank when JavaScript is unavailable                                        | Moderate |
 | [KI-6](docs/KNOWN_ISSUES.md#ki-6-a-newly-published-post-is-missing-from-the-posts-listing)                              | A newly published post is missing from the posts listing                              | Moderate |
 | [KI-7](docs/KNOWN_ISSUES.md#ki-7-rest-validation-errors-lose-their-field-details-once-the-admin-panel-has-loaded-first) | REST validation errors lose their field details once the admin panel has loaded first | Low      |
+| [KI-8](docs/KNOWN_ISSUES.md#ki-8-a-malformed-email-shows-the-generic-required-field-message)                            | A malformed email shows the generic required-field message                            | Low      |
 
 ## What this does not cover
 
@@ -104,6 +105,8 @@ The tests run against the production build, so run `pnpm build` again after chan
 The suite logs in with `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD`. A `.env` created before they were added to `.env.example` needs both lines, and the run stops at startup without them.
 
 Defects found in the app are listed in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md).
+
+An experiment with Playwright Test Agents, including where they conflict with these rules, is in [`docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md`](docs/PLAYWRIGHT_AGENTS_EXPERIMENT.md).
 
 ## Continuous integration
 
