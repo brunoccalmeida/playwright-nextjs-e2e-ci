@@ -30,6 +30,7 @@ interface Readme {
   areaTableHeader: string
   // Only the English table repeats the headings; the other one translates them
   bugTitlesMatchHeadings: boolean
+  impactLabels: Record<string, string>
 }
 
 const READMES: Readme[] = [
@@ -43,6 +44,7 @@ const READMES: Readme[] = [
     ],
     areaTableHeader: '| Area ',
     bugTitlesMatchHeadings: true,
+    impactLabels: { low: 'Low', moderate: 'Moderate' },
   },
   {
     file: 'README.pt-BR.md',
@@ -54,6 +56,7 @@ const READMES: Readme[] = [
     ],
     areaTableHeader: '| Área ',
     bugTitlesMatchHeadings: false,
+    impactLabels: { low: 'Baixo', moderate: 'Moderado' },
   },
 ]
 
@@ -156,7 +159,18 @@ function checkAreaTable(readme: Readme, markdown: string, tests: ListedTest[]): 
   return [...new Set(errors)]
 }
 
-function checkBugsTable(readme: Readme, markdown: string): string[] {
+function readImpacts(): Map<string, string> {
+  const impacts = new Map<string, string>()
+  // By section: a global search would take the next entry's impact when one is missing
+  for (const section of read('docs/KNOWN_ISSUES.md').split(/^(?=## KI-)/m)) {
+    const id = /^## (KI-\d+):/.exec(section)?.[1]
+    const impact = /^- \*\*Impact:\*\* (\w+)/m.exec(section)?.[1]
+    if (id !== undefined) impacts.set(id, impact ?? '')
+  }
+  return impacts
+}
+
+function checkBugsTable(readme: Readme, markdown: string, impacts: Map<string, string>): string[] {
   const rows = tableRows(markdown, '| Id ')
   const ids = Object.keys(knownIssueTitles) as KnownIssueId[]
   const expected = ids.map((id) => `[${id}](docs/KNOWN_ISSUES.md#${knownIssueAnchor(id)})`)
@@ -168,18 +182,24 @@ function checkBugsTable(readme: Readme, markdown: string): string[] {
       .filter((link) => !expected.includes(link))
       .map((link) => `bugs table has an unknown ${link}`),
   ]
-  if (readme.bugTitlesMatchHeadings) {
-    ids.forEach((id, index) => {
-      const title = rows[index]?.[1]
-      if (title !== knownIssueTitles[id]) {
-        errors.push(`bugs table, ${id}: title differs from the heading in docs/KNOWN_ISSUES.md`)
-      }
-    })
-  }
+  ids.forEach((id, index) => {
+    const [, title, impact] = rows[index] ?? []
+    if (readme.bugTitlesMatchHeadings && title !== knownIssueTitles[id]) {
+      errors.push(`bugs table, ${id}: title differs from the heading in docs/KNOWN_ISSUES.md`)
+    }
+    const level = impacts.get(id) ?? ''
+    const label = readme.impactLabels[level]
+    if (label === undefined) {
+      errors.push(`bugs table, ${id}: no label for the impact "${level}" in docs/KNOWN_ISSUES.md`)
+    } else if (impact !== label) {
+      errors.push(`bugs table, ${id}: impact should be ${label}, as docs/KNOWN_ISSUES.md says`)
+    }
+  })
   return errors
 }
 
 const tests = listTests()
+const impacts = readImpacts()
 const facts: Facts = {
   tests: tests.length,
   knownIssues: Object.keys(knownIssueTitles).length,
@@ -191,7 +211,7 @@ for (const readme of READMES) {
   const errors = [
     ...checkClaims(readme, markdown, facts),
     ...checkAreaTable(readme, markdown, tests),
-    ...checkBugsTable(readme, markdown),
+    ...checkBugsTable(readme, markdown, impacts),
   ]
   if (errors.length > 0) {
     console.error(`${readme.file} disagrees with the repository:\n- ${errors.join('\n- ')}`)

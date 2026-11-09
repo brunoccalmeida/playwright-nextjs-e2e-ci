@@ -697,6 +697,16 @@ Primeiro passo: `pnpm run check:readme` antes do arquivo existir, `ERR_MODULE_NO
 | Afirmação reescrita           | `Tests in main`                      | `no longer finds the tests claim`                                  |
 | Spec quebrado                 | Erro de sintaxe                      | `SyntaxError`, listagem reprova                                    |
 | Ligação no `pnpm check`       | 64 no `README.md`                    | `pnpm check` exit 1 com a mensagem da sentinela                    |
+| Impacto mudou no documento    | `KI-2` para `low`                    | `impact should be Low` e `Baixo`, nos dois                         |
+| Impacto errado em um idioma   | `KI-1` como `Moderado` no pt-BR      | `impact should be Baixo`, só nesse arquivo                         |
+| Nível novo no documento       | `high`                               | `no label for the impact "high"`, nos dois                         |
+| Impacto ausente no documento  | Linha removida do `KI-1`             | `no label for the impact ""`, sem pegar o da entrada seguinte      |
+
+### Revisão independente
+
+- **Aplicado:** a regra dizia que a classificação de impacto não era derivável, o que era falso: cada entrada de `docs/KNOWN_ISSUES.md` tem o campo, e a issue pede as linhas da tabela contra esse documento. A sentinela agora confere o impacto nos dois idiomas. Só a tradução do título continua manual.
+- **Aplicado:** a frase sobre `src/` e o link de comparação fixado entraram na lista do que é manual. Não virou checagem porque o job `check` usa checkout raso, sem o histórico até o primeiro commit.
+- **Descartado:** nenhum. O revisor não executou o job `check`; o primeiro run no PR é a prova de que `--list` funciona sem `.env` e sem build.
 
 ### Achados
 
