@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Deadlock ao repetir o `db:seed` (#32), concluída com o merge do PR da missão |
-| Próxima missão   | Nenhuma issue viável: a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a mais recente ainda fixa o Lexical em 0.50.0). Avaliar a fila do Dependabot, começando pelo #36 |
+| Missão atual     | Regras sempre carregadas só com o que é durável e geral (#41), concluída com o merge do PR da missão |
+| Próxima missão   | #40 (P2), a investigação do botão de seed do admin. A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a mais recente ainda fixa o Lexical em 0.50.0). Avaliar também a fila do Dependabot, começando pelo #36 |
 | PRs abertos      | Dependabot #13 a #16, #23 e #36, à espera de avaliação um por vez; o #36 substituiu o #24 e sobe o Playwright para 1.64.1; o `check` dele reprova pela sentinela (#21), que indica a imagem a usar, e o `e2e` por `Executable doesn't exist` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -782,3 +782,29 @@ O usuário pediu certeza antes de qualquer relato, então o botão foi medido pe
 ### Fontes consultadas
 
 Em 09/11/2026: Playwright na tag `v1.63.0`: [anotações](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-annotations-js.md), [classe Test](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-api/class-test.md) e [retries](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-retries-js.md); [formulário de bug da Payload](https://github.com/payloadcms/payload/blob/main/.github/ISSUE_TEMPLATE/1.bug_report_v3.yml). Postgres 18: [Deadlocks](https://www.postgresql.org/docs/18/explicit-locking.html) e [retry de falhas](https://www.postgresql.org/docs/18/mvcc-serialization-failure-handling.html); Payload na tag `v3.93.0`: [transações](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/transactions.mdx) e [migrations](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/migrations.mdx); [template na `main` da Payload](https://github.com/payloadcms/payload/blob/main/templates/website/src/endpoints/seed/index.ts); Next.js instalado, `node_modules/next/dist/docs/01-app/02-guides/ci-build-caching.md`. Código instalado: `@payloadcms/drizzle/dist/deleteMany.js` e `migrateFresh.js`, `payload/dist/bin/migrate.js` e `@payloadcms/db-postgres/dist/connect.js`.
+
+## Missão #41
+
+### Decisões
+
+- **Critério, pedido pelo usuário:** regra sempre carregada vale para toda sessão e todo agente e não perde a validade. Está registrado em `.claude/rules/agent-rules.md`, que carrega ao editar as regras.
+- **Mover em vez de apagar:** as regras de teste foram para `.claude/rules/tests.md` e as de edição das regras para `agent-rules.md`, cada uma com a cópia em `.github/instructions/`. Apagar perderia conhecimento que ainda vale naquela parte do código.
+- **Removido por duplicar:** o passo do `reviewer` e os detalhes do squash estão em `/close-mission` e `/ship-pr`; o ponteiro para `dependencies.md` era inútil, porque a regra carrega sozinha.
+- **Configuração por variável de ambiente subiu para "Segurança":** vale também para `scripts/`, não só para os testes.
+- **Ficaram o ciclo de missão e a regra de ouro** (julgamento nosso): são processo estável e valem em toda sessão.
+- **PR aberto com a fila do Dependabot pendente:** decisão do usuário, como nas missões anteriores.
+
+### Como o RED foi visto
+
+| Alvo                | Sonda                                                     | Erro observado                                                |
+| ------------------- | --------------------------------------------------------- | ------------------------------------------------------------- |
+| Sentinela de regras | Linha a mais em `.github/instructions/tests.instructions.md` | `Rule "tests": the body differs between Claude and Copilot.`, exit 1 |
+
+### Achados
+
+- **Limite do `applyTo`:** segundo a doc do GitHub, JetBrains e Xcode só leem o arquivo geral, então neles as regras movidas não valem. O projeto usa VS Code.
+- **Não verificado em sessão real:** o carregamento das regras novas segue a documentação; regra com escopo só entra quando um arquivo casado é lido ou editado.
+
+### Fontes consultadas
+
+Em 10/11/2026: Claude Code: [memória](https://code.claude.com/docs/en/memory) e [boas práticas](https://code.claude.com/docs/en/best-practices); GitHub: [instruções de repositório no IDE](https://docs.github.com/en/copilot/how-tos/copilot-in-your-ide/customize-copilot/configure-custom-instructions/add-repository-instructions-in-your-ide).
