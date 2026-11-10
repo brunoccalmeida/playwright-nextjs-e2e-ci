@@ -737,16 +737,27 @@ Sempre num Postgres 18 descartável na porta 55432, para não apagar o banco loc
 | Código original, banco só com o seed         | 8 de 8 passaram: **não reproduziu**                        |
 | Código original, 3000 posts a mais por seed  | 5 falhas em 20, todas `40P01` em `delete from "posts"`     |
 | Com a limpeza sequencial, 3000 posts a mais  | 40 de 40, zero `ERROR` no log do Postgres                  |
+| Limpeza com `forms` antes de `form-submissions`, um envio existente | 23502 em `delete from "forms"`, em toda repetição |
+| Ordem final, um envio e 3000 posts a mais por seed | 25 de 25, zero `ERROR` no log do Postgres            |
 
 Cada post inflado aponta para uma mídia e para as 6 categorias. Nos 5 deadlocks, o log do Postgres mostra `delete from "posts"` contra `delete from "media"`. O conteúdo final é o mesmo em todos os casos: 3 posts, 2 páginas, 4 mídias, 6 categorias, 1 usuário.
 
 ### Achados
 
-- **Com poucos dados o deadlock quase não aparece:** com 3 posts, os deletes duram milissegundos. A primeira tentativa de RED passou 8 de 8, e implementar ali teria "corrigido" algo nunca visto. O banco da issue tinha sido usado por testes.
+- **Com poucos dados o deadlock quase não aparece:** com 3 posts, os deletes duram milissegundos. A primeira tentativa de RED passou 8 de 8, e implementar ali teria "corrigido" algo nunca visto. Que o banco da issue tivesse mais dados é hipótese; a medição prova o mecanismo com posts artificiais, não a condição daquele dia.
 - **Causa medida:** `delete from "media"` faz `SET NULL` em `posts.hero_image_id` enquanto `delete from "posts"` apaga as mesmas linhas, cada um em sua ordem. A issue só dizia "duas transações".
 - **Seed que falha destrói dados:** um deles deixou `posts=3003`, `media=0`, `categories=0`, porque cada delete é confirmado sozinho.
 - **Sem correção a copiar:** a `main` da Payload mantém o mesmo `Promise.all`, e a doc de transações não fala de deadlock. Atualizar a Payload não resolveria.
-- **Limite aceito:** o seed do template ainda roda em paralelo a limpeza das versões (`deleteVersions`), em tabelas sem linhas em comum entre `_pages_v` e `_posts_v` (lido nas foreign keys da migration). As 40 execuções cobrem esse caminho.
+- **Limite aceito, `deleteVersions`:** o seed do template ainda limpa as versões em paralelo. O que sustenta isso é a leitura das foreign keys da migration: não há ligação entre `_pages_v` e `_posts_v`. As medições não inflaram versões, então não provam esse ponto.
+- **Limite aceito, botão de seed do admin:** `src/app/(frontend)/next/seed/route.ts` chama o seed paralelo direto, e só o `pnpm db:seed` foi corrigido, que é o escopo da #32. O código é congelado. Não virou KI, desvio da regra registrado aqui: reproduzir exige milhares de linhas e apagar o seed, o que nenhum teste pode fazer (o seed é a base compartilhada), e todo KI é fixado por um `test.fail`.
+- **Catálogo do Postgres responde o que `grep` adivinha:** `pg_constraint` com `confdeltype='n'` e `attnotnull` lista toda coluna `NOT NULL` com `ON DELETE SET NULL`. Só há uma, `form_submissions.form_id`.
+
+### Revisão independente
+
+- **Aplicado, reproduzido antes de corrigir:** a primeira ordem apagava `forms` antes de `form-submissions`, e um único envio fazia todo seed seguinte falhar com `23502`, sem recuperação além do `pnpm db:down`. As medições não pegaram porque nenhuma tinha envio. Sequencializar trocou uma corrida por uma dependência de ordem.
+- **Aplicado:** o botão de seed do admin entrou nos limites; as frases sobre `deleteVersions` e sobre o banco da issue deixaram de afirmar o que não foi medido; o comentário cita a coluna `hero_image_id`.
+- **Conferido:** o RED está na mensagem do commit da correção; o revisor não tinha acesso a ela.
+- **Descartado:** nenhum.
 
 ### Fontes consultadas
 

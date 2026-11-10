@@ -41,20 +41,22 @@ function withoutRevalidation(base: SanitizedConfig): SanitizedConfig {
   }
 }
 
-// The collections the template's seed clears. That list is private to it.
+// The collections the template's seed clears. That list is private to it. The
+// order matters for one pair: form_submissions.form_id is NOT NULL with ON DELETE
+// SET NULL, so a form that still has submissions cannot be deleted.
 const clearedBySeed: CollectionSlug[] = [
   'categories',
   'media',
   'pages',
   'posts',
-  'forms',
   'form-submissions',
+  'forms',
   'search',
 ]
 
 // The template's seed clears these in parallel, and on a populated database
 // Postgres can abort it with a deadlock (40P01): `delete from media` sets
-// posts.hero_image to null while `delete from posts` removes the same rows.
+// posts.hero_image_id to null while `delete from posts` removes the same rows.
 // Clearing them one at a time leaves no competing transactions, and the
 // template's own deletes then find empty tables.
 async function clearOneAtATime(payload: Payload, req: PayloadRequest): Promise<void> {
