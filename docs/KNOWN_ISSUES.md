@@ -4,7 +4,7 @@
 
 Defects in the application under test (the official Payload `website` template) found by this test suite.
 
-**How they are tracked:** each issue has a test marked `test.fail()` that asserts the **correct** behavior and links here. While the defect exists, the test "fails as expected" and the run stays green; once the defect is fixed, the test starts failing and signals that the marker must be removed. The suite keeps documenting the defect and detects its fix, without hiding it behind a skipped test.
+**How they are tracked:** each numbered issue has a test marked `test.fail()` that asserts the **correct** behavior and links here. While the defect exists, the test "fails as expected" and the run stays green; once the defect is fixed, the test starts failing and signals that the marker must be removed. The suite keeps documenting the defect and detects its fix, without hiding it behind a skipped test. A defect that such a test cannot pin is listed [at the end](#defects-without-a-test), unnumbered, with the reason.
 
 Issues are numbered in the order they were found.
 
@@ -71,3 +71,14 @@ Issues are numbered in the order they were found.
 - **Cause:** `src/blocks/Form/Email/index.tsx` registers `pattern` without a `message`, and `src/blocks/Form/Error/index.tsx` falls back to `This field is required` for any error without one.
 - **Impact:** low. The input is still rejected, but the message misleads the visitor about what to fix.
 - **Test:** `a malformed email gets a message about its format`, in `tests/e2e/contact-form.spec.ts`.
+
+## Defects without a test
+
+### The admin panel's seed button fails on a database that already has data
+
+- **Observed:** `POST /next/seed`, the request the button sends, returned `500` on a database with content. On this repository's production build, against a throwaway Postgres: with seed data only, 8 of 8 runs passed; after one submission through the contact form's API, 6 of 8 failed with `23502` (`null value in column "form_id"`); with 300 or 3000 extra posts, 6 of 15 failed with a `40P01` deadlock in each case. On a new app from `create-payload-app@3.93.0 -t website --db postgres`, in `pnpm dev`: 8 of 8 passed with seed data only, and 5 of 8 failed with the same `23502` after one submission.
+- **Expected:** the seed replaces the content. Its own comment says the endpoint, unlike a script that drops the database, has to clear the existing data.
+- **Cause:** `src/endpoints/seed/index.ts` clears its collections in parallel with `Promise.all`. Deleting a form sets `form_submissions.form_id` to null, a `NOT NULL` column, unless the submissions are already gone, so the outcome depends on which delete runs first. `delete from "media"` also clears references in `posts` and `pages` while their own deletes lock the same rows, which is the deadlock in the Postgres log.
+- **Impact:** moderate. It needs a logged-in admin, but one contact form submission is enough to trigger it. Each delete commits on its own, so a failure can leave the collections partly cleared.
+- **Why there is no test:** the failure is intermittent, and `test.fail()` requires a failure on every run. The test would also have to erase the seed that the other tests share.
+- **`pnpm db:seed` is not affected:** `scripts/seed.ts` clears the collections one at a time before calling this seed.

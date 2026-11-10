@@ -6,7 +6,7 @@ import { resolve } from 'node:path'
 
 import config from '@payload-config'
 import { createLocalReq, getPayload } from 'payload'
-import type { PayloadRequest, SanitizedConfig } from 'payload'
+import type { CollectionSlug, Payload, PayloadRequest, SanitizedConfig } from 'payload'
 
 import { seed } from '@/endpoints/seed'
 
@@ -41,6 +41,30 @@ function withoutRevalidation(base: SanitizedConfig): SanitizedConfig {
   }
 }
 
+// The collections the template's seed clears. That list is private to it. The
+// order matters for one pair: form_submissions.form_id is NOT NULL with ON DELETE
+// SET NULL, so a form that still has submissions cannot be deleted.
+const clearedBySeed: CollectionSlug[] = [
+  'categories',
+  'media',
+  'pages',
+  'posts',
+  'form-submissions',
+  'forms',
+  'search',
+]
+
+// The template's seed clears these in parallel, and on a populated database
+// Postgres can abort it with a deadlock (40P01): `delete from media` sets
+// posts.hero_image_id to null while `delete from posts` removes the same rows.
+// Clearing them one at a time leaves no competing transactions, and the
+// template's own deletes then find empty tables.
+async function clearOneAtATime(payload: Payload, req: PayloadRequest): Promise<void> {
+  for (const collection of clearedBySeed) {
+    await payload.db.deleteMany({ collection, req, where: {} })
+  }
+}
+
 parseEnv()
 
 // The seed clears the media records but not their files, and Payload renames an
@@ -49,6 +73,7 @@ await rm(resolve('public/media'), { recursive: true, force: true })
 
 const payload = await getPayload({ config: withoutRevalidation(await config) })
 const req = await createLocalReq({}, payload)
+await clearOneAtATime(payload, req)
 await seed({ payload, req })
 
 payload.logger.info('Seed finished')

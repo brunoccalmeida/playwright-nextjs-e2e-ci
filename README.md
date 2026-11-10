@@ -91,6 +91,7 @@ Open <http://localhost:3000>. The admin panel is at <http://localhost:3000/admin
 
 - **Keep this order.** Static pages are generated during the build, so seeding after it leaves `/posts` empty for up to 10 minutes.
 - **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:int`, including the [template's Development steps](docs/PAYLOAD_TEMPLATE_README.md#development)) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
+- **If the seed fails, do not build yet.** A failed seed can leave the database half cleared. Run `pnpm db:seed` again first. If you already built, remove `.next` before building again: `.next/cache` is shared between builds and keeps the empty header, even after a good seed.
 - **Start over:** `pnpm db:down` deletes the database, then repeat from `pnpm db:up`.
 
 ## Run the end-to-end tests

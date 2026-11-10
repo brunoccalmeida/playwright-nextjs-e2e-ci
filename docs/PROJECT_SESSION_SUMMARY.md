@@ -8,8 +8,8 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Números do README em sincronia (#31), concluída com o merge do PR da missão |
-| Próxima missão   | #32 (deadlock ao repetir o `db:seed`), a P2 de menor número que dá para fazer; a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a mais recente ainda fixa o Lexical em 0.50.0) |
+| Missão atual     | Deadlock ao repetir o `db:seed` (#32), concluída com o merge do PR da missão |
+| Próxima missão   | Nenhuma issue viável: a #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a mais recente ainda fixa o Lexical em 0.50.0). Avaliar a fila do Dependabot, começando pelo #36 |
 | PRs abertos      | Dependabot #13 a #16, #23 e #36, à espera de avaliação um por vez; o #36 substituiu o #24 e sobe o Playwright para 1.64.1; o `check` dele reprova pela sentinela (#21), que indica a imagem a usar, e o `e2e` por `Executable doesn't exist` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -716,3 +716,69 @@ Primeiro passo: `pnpm run check:readme` antes do arquivo existir, `ERR_MODULE_NO
 ### Fontes consultadas
 
 Em 09/11/2026: Playwright na tag `v1.63.0`: [CLI](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-cli-js.md) e [reporters](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-reporters-js.md); tipos `JSONReport` em `playwright/types/testReporter.d.ts`, de onde veio a forma do JSON. GitHub: [About the repository README file](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes) e [sintaxe de escrita](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+
+## Missão #32
+
+### Decisões
+
+- **Corrigir em vez de só documentar:** a issue aceitava os dois caminhos. A doc do Postgres põe a prevenção à frente do retry, e documentar o reset deixaria o erro no caminho de quem segue o README.
+- **Limpeza sequencial em `scripts/seed.ts`, antes do seed do template:** um delete de cada vez não deixa transações concorrentes, e os deletes paralelos do template encontram tabelas vazias. O arquivo é nosso, então `src/` segue sem diff.
+- **Lista de 7 coleções repetida no script:** a do template não é exportada, e o código dele é congelado. Aceitar a repetição é julgamento nosso.
+- **Sem `migrate:fresh` antes do seed:** apagaria também usuários criados à mão, e o README promete substituir conteúdo e mídia, não o banco (julgamento nosso). Ele pede confirmação, e o `--force-accept-warning` só está documentado para `migrate:create`.
+- **Sem retry em `40P01`:** o Postgres pede refazer a transação completa, aqui o seed inteiro, e o `Promise.all` rejeitado deixa os outros deletes rodando.
+- **Linha nova nos READMEs sobre seed que falha e `.next`:** um seed ainda pode falhar por outro motivo, como o download das imagens.
+
+### Como o RED foi visto
+
+Sempre num Postgres 18 descartável na porta 55432, para não apagar o banco local, com `public/media` copiada e restaurada no fim. O seed real (`pnpm db:seed`) rodou em todas as medições; o exit code foi lido direto, sem pipe.
+
+| Condição                                     | Resultado                                                  |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| Código original, banco só com o seed         | 8 de 8 passaram: **não reproduziu**                        |
+| Código original, 3000 posts a mais por seed  | 5 falhas em 20, todas `40P01` em `delete from "posts"`     |
+| Com a limpeza sequencial, 3000 posts a mais  | 40 de 40, zero `ERROR` no log do Postgres                  |
+| Limpeza com `forms` antes de `form-submissions`, um envio existente | 23502 em `delete from "forms"`, em toda repetição |
+| Ordem final, um envio e 3000 posts a mais por seed | 25 de 25, zero `ERROR` no log do Postgres            |
+
+Cada post inflado aponta para uma mídia e para as 6 categorias. Nos 5 deadlocks, o log do Postgres mostra `delete from "posts"` contra `delete from "media"`. O conteúdo final é o mesmo em todos os casos: 3 posts, 2 páginas, 4 mídias, 6 categorias, 1 usuário.
+
+### Achados
+
+- **Com poucos dados o deadlock quase não aparece:** com 3 posts, os deletes duram milissegundos. A primeira tentativa de RED passou 8 de 8, e implementar ali teria "corrigido" algo nunca visto. Que o banco da issue tivesse mais dados é hipótese; a medição prova o mecanismo com posts artificiais, não a condição daquele dia.
+- **Causa medida:** `delete from "media"` faz `SET NULL` em `posts.hero_image_id` enquanto `delete from "posts"` apaga as mesmas linhas, cada um em sua ordem. A issue só dizia "duas transações".
+- **Seed que falha destrói dados:** um deles deixou `posts=3003`, `media=0`, `categories=0`, porque cada delete é confirmado sozinho.
+- **Sem correção a copiar:** a `main` da Payload mantém o mesmo `Promise.all`, e a doc de transações não fala de deadlock. Atualizar a Payload não resolveria.
+- **Limite aceito, `deleteVersions`:** o seed do template ainda limpa as versões em paralelo. O que sustenta isso é a leitura das foreign keys da migration: não há ligação entre `_pages_v` e `_posts_v`. As medições não inflaram versões, então não provam esse ponto.
+- **Botão de seed do admin continua com o defeito:** `src/app/(frontend)/next/seed/route.ts` chama o seed paralelo direto, e só o `pnpm db:seed` foi corrigido, que é o escopo da #32. O código é congelado. Medido e registrado em `docs/KNOWN_ISSUES.md`, na seção de defeitos sem teste (ver abaixo).
+- **Catálogo do Postgres responde o que `grep` adivinha:** `pg_constraint` com `confdeltype='n'` e `attnotnull` lista toda coluna `NOT NULL` com `ON DELETE SET NULL`. Só há uma, `form_submissions.form_id`.
+
+### Revisão independente
+
+- **Aplicado, reproduzido antes de corrigir:** a primeira ordem apagava `forms` antes de `form-submissions`, e um único envio fazia todo seed seguinte falhar com `23502`, sem recuperação além do `pnpm db:down`. As medições não pegaram porque nenhuma tinha envio. Sequencializar trocou uma corrida por uma dependência de ordem.
+- **Aplicado:** o botão de seed do admin entrou nos limites; as frases sobre `deleteVersions` e sobre o banco da issue deixaram de afirmar o que não foi medido; o comentário cita a coluna `hero_image_id`.
+- **Conferido:** o RED está na mensagem do commit da correção; o revisor não tinha acesso a ela.
+- **Descartado:** nenhum.
+
+### O botão de seed é bug do template
+
+O usuário pediu certeza antes de qualquer relato, então o botão foi medido pela rota real, autenticado, sem mudar `src/`.
+
+| Ambiente                                     | Estado antes do `POST /next/seed`  | Resultado                  |
+| -------------------------------------------- | ---------------------------------- | -------------------------- |
+| Este repositório, build de produção          | Só o seed                          | 8 de 8 passaram            |
+| Este repositório, build de produção          | Um envio pela API do formulário    | 6 de 8 falharam, `23502`   |
+| Este repositório, build de produção          | 300 posts a mais                   | 6 de 15 falharam, `40P01`  |
+| Este repositório, build de produção          | 3000 posts a mais                  | 6 de 15 falharam, `40P01`  |
+| App novo de `create-payload-app@3.93.0`, `pnpm dev` | Só o seed                   | 8 de 8 passaram            |
+| App novo de `create-payload-app@3.93.0`, `pnpm dev` | Um envio pela API do formulário | 5 de 8 falharam, `23502` |
+
+- **Por que é bug, e não uso indevido:** o comentário do seed diz que o endpoint precisa limpar os dados porque não apaga o banco, o controle passa e o gatilho é um envio comum.
+- **Sem `test.fail` (julgamento nosso):** o resultado varia, e a doc do Playwright diz que ele reclama se o teste não falhar. `fixme` não roda, e `skip` a regra proíbe. Forçar a falha sempre exigiria sincronizar locks do Postgres e apagar o seed compartilhado.
+- **Seção separada em `KNOWN_ISSUES.md`:** um KI-9 sem teste tornaria falsos o "each issue has a test" do documento e o "8, each with a test" do README. As sentinelas só leem cabeçalhos `## KI-`.
+- **Relato à Payload, decisão do usuário:** o app novo usa Next 16.4.1 e Postgres 18 e reproduz sem nenhum código nosso. O formulário deles exige um link público de reprodução. Nada foi publicado.
+- **Corrigido neste registro:** eu tinha escrito que reproduzir exigia milhares de linhas. Bastam 300 posts, ou um envio.
+- **A primeira classificação do script saiu `unclassified`:** o log do servidor traz a mensagem, não o código numérico. Reclassificado pela mensagem, arquivo a arquivo.
+
+### Fontes consultadas
+
+Em 09/11/2026: Playwright na tag `v1.63.0`: [anotações](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-annotations-js.md), [classe Test](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-api/class-test.md) e [retries](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-retries-js.md); [formulário de bug da Payload](https://github.com/payloadcms/payload/blob/main/.github/ISSUE_TEMPLATE/1.bug_report_v3.yml). Postgres 18: [Deadlocks](https://www.postgresql.org/docs/18/explicit-locking.html) e [retry de falhas](https://www.postgresql.org/docs/18/mvcc-serialization-failure-handling.html); Payload na tag `v3.93.0`: [transações](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/transactions.mdx) e [migrations](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/migrations.mdx); [template na `main` da Payload](https://github.com/payloadcms/payload/blob/main/templates/website/src/endpoints/seed/index.ts); Next.js instalado, `node_modules/next/dist/docs/01-app/02-guides/ci-build-caching.md`. Código instalado: `@payloadcms/drizzle/dist/deleteMany.js` e `migrateFresh.js`, `payload/dist/bin/migrate.js` e `@payloadcms/db-postgres/dist/connect.js`.
