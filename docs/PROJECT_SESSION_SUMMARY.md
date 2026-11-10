@@ -749,7 +749,7 @@ Cada post inflado aponta para uma mídia e para as 6 categorias. Nos 5 deadlocks
 - **Seed que falha destrói dados:** um deles deixou `posts=3003`, `media=0`, `categories=0`, porque cada delete é confirmado sozinho.
 - **Sem correção a copiar:** a `main` da Payload mantém o mesmo `Promise.all`, e a doc de transações não fala de deadlock. Atualizar a Payload não resolveria.
 - **Limite aceito, `deleteVersions`:** o seed do template ainda limpa as versões em paralelo. O que sustenta isso é a leitura das foreign keys da migration: não há ligação entre `_pages_v` e `_posts_v`. As medições não inflaram versões, então não provam esse ponto.
-- **Limite aceito, botão de seed do admin:** `src/app/(frontend)/next/seed/route.ts` chama o seed paralelo direto, e só o `pnpm db:seed` foi corrigido, que é o escopo da #32. O código é congelado. Não virou KI, desvio da regra registrado aqui: reproduzir exige milhares de linhas e apagar o seed, o que nenhum teste pode fazer (o seed é a base compartilhada), e todo KI é fixado por um `test.fail`.
+- **Botão de seed do admin continua com o defeito:** `src/app/(frontend)/next/seed/route.ts` chama o seed paralelo direto, e só o `pnpm db:seed` foi corrigido, que é o escopo da #32. O código é congelado. Medido e registrado em `docs/KNOWN_ISSUES.md`, na seção de defeitos sem teste (ver abaixo).
 - **Catálogo do Postgres responde o que `grep` adivinha:** `pg_constraint` com `confdeltype='n'` e `attnotnull` lista toda coluna `NOT NULL` com `ON DELETE SET NULL`. Só há uma, `form_submissions.form_id`.
 
 ### Revisão independente
@@ -759,6 +759,26 @@ Cada post inflado aponta para uma mídia e para as 6 categorias. Nos 5 deadlocks
 - **Conferido:** o RED está na mensagem do commit da correção; o revisor não tinha acesso a ela.
 - **Descartado:** nenhum.
 
+### O botão de seed é bug do template
+
+O usuário pediu certeza antes de qualquer relato, então o botão foi medido pela rota real, autenticado, sem mudar `src/`.
+
+| Ambiente                                     | Estado antes do `POST /next/seed`  | Resultado                  |
+| -------------------------------------------- | ---------------------------------- | -------------------------- |
+| Este repositório, build de produção          | Só o seed                          | 8 de 8 passaram            |
+| Este repositório, build de produção          | Um envio pela API do formulário    | 6 de 8 falharam, `23502`   |
+| Este repositório, build de produção          | 300 posts a mais                   | 6 de 15 falharam, `40P01`  |
+| Este repositório, build de produção          | 3000 posts a mais                  | 6 de 15 falharam, `40P01`  |
+| App novo de `create-payload-app@3.93.0`, `pnpm dev` | Só o seed                   | 8 de 8 passaram            |
+| App novo de `create-payload-app@3.93.0`, `pnpm dev` | Um envio pela API do formulário | 5 de 8 falharam, `23502` |
+
+- **Por que é bug, e não uso indevido:** o comentário do seed diz que o endpoint precisa limpar os dados porque não apaga o banco, o controle passa e o gatilho é um envio comum.
+- **Sem `test.fail` (julgamento nosso):** o resultado varia, e a doc do Playwright diz que ele reclama se o teste não falhar. `fixme` não roda, e `skip` a regra proíbe. Forçar a falha sempre exigiria sincronizar locks do Postgres e apagar o seed compartilhado.
+- **Seção separada em `KNOWN_ISSUES.md`:** um KI-9 sem teste tornaria falsos o "each issue has a test" do documento e o "8, each with a test" do README. As sentinelas só leem cabeçalhos `## KI-`.
+- **Relato à Payload, decisão do usuário:** o app novo usa Next 16.4.1 e Postgres 18 e reproduz sem nenhum código nosso. O formulário deles exige um link público de reprodução. Nada foi publicado.
+- **Corrigido neste registro:** eu tinha escrito que reproduzir exigia milhares de linhas. Bastam 300 posts, ou um envio.
+- **A primeira classificação do script saiu `unclassified`:** o log do servidor traz a mensagem, não o código numérico. Reclassificado pela mensagem, arquivo a arquivo.
+
 ### Fontes consultadas
 
-Em 09/11/2026: Postgres 18: [Deadlocks](https://www.postgresql.org/docs/18/explicit-locking.html) e [retry de falhas](https://www.postgresql.org/docs/18/mvcc-serialization-failure-handling.html); Payload na tag `v3.93.0`: [transações](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/transactions.mdx) e [migrations](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/migrations.mdx); [template na `main` da Payload](https://github.com/payloadcms/payload/blob/main/templates/website/src/endpoints/seed/index.ts); Next.js instalado, `node_modules/next/dist/docs/01-app/02-guides/ci-build-caching.md`. Código instalado: `@payloadcms/drizzle/dist/deleteMany.js` e `migrateFresh.js`, `payload/dist/bin/migrate.js` e `@payloadcms/db-postgres/dist/connect.js`.
+Em 09/11/2026: Playwright na tag `v1.63.0`: [anotações](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-annotations-js.md), [classe Test](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-api/class-test.md) e [retries](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-retries-js.md); [formulário de bug da Payload](https://github.com/payloadcms/payload/blob/main/.github/ISSUE_TEMPLATE/1.bug_report_v3.yml). Postgres 18: [Deadlocks](https://www.postgresql.org/docs/18/explicit-locking.html) e [retry de falhas](https://www.postgresql.org/docs/18/mvcc-serialization-failure-handling.html); Payload na tag `v3.93.0`: [transações](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/transactions.mdx) e [migrations](https://github.com/payloadcms/payload/blob/v3.93.0/docs/database/migrations.mdx); [template na `main` da Payload](https://github.com/payloadcms/payload/blob/main/templates/website/src/endpoints/seed/index.ts); Next.js instalado, `node_modules/next/dist/docs/01-app/02-guides/ci-build-caching.md`. Código instalado: `@payloadcms/drizzle/dist/deleteMany.js` e `migrateFresh.js`, `payload/dist/bin/migrate.js` e `@payloadcms/db-postgres/dist/connect.js`.
