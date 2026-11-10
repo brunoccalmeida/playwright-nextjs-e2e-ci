@@ -93,6 +93,7 @@ Abra <http://localhost:3000>. O painel admin fica em <http://localhost:3000/admi
 
 - **Mantenha esta ordem.** As páginas estáticas são geradas no build, então um seed depois dele deixa `/posts` vazio por até 10 minutos.
 - **Mantenha este banco em modo de produção.** Qualquer outra conexão a ele (`pnpm dev`, `pnpm test:int`, inclusive os [passos de Development do template](docs/PAYLOAD_TEMPLATE_README.md#development)) faz o adaptador Postgres aplicar o schema e marcar o banco como dev. O próximo `pnpm db:migrate` então para num prompt de perda de dados em vez de migrar. Para recuperar, rode `pnpm db:down` e recomece em `pnpm db:up`.
+- **Se o seed falhar, não faça o build ainda.** Um seed que falha pode deixar o banco parcialmente limpo. Rode `pnpm db:seed` de novo antes. Se o build já foi feito, remova `.next` antes de repeti-lo: o `.next/cache` é compartilhado entre builds e guarda o header vazio, mesmo depois de um seed bom.
 - **Recomeçar:** `pnpm db:down` apaga o banco; depois repita a partir de `pnpm db:up`.
 
 ## Rodar os testes end-to-end
