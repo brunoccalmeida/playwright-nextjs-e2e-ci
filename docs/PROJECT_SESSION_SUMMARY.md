@@ -789,7 +789,8 @@ Em 09/11/2026: Playwright na tag `v1.63.0`: [anotações](https://github.com/mic
 
 - **Critério, pedido pelo usuário:** regra sempre carregada vale para toda sessão e todo agente e não perde a validade. Está registrado em `.claude/rules/agent-rules.md`, que carrega ao editar as regras.
 - **Mover em vez de apagar:** as regras de teste foram para `.claude/rules/tests.md` e as de edição das regras para `agent-rules.md`, cada uma com a cópia em `.github/instructions/`. Apagar perderia conhecimento que ainda vale naquela parte do código.
-- **Removido por duplicar:** o passo do `reviewer` e os detalhes do squash estão em `/close-mission` e `/ship-pr`; o ponteiro para `dependencies.md` era inútil, porque a regra carrega sozinha.
+- **Removido por duplicar:** o passo do `reviewer` e os detalhes do squash estão em `/close-mission` e `/ship-pr`; o ponteiro para `dependencies.md` era inútil, porque a regra carrega sozinha; "Node fixado em `.node-version`" está no README e no `ci.yml`; "`waitForTimeout` é barrado pelo lint" é o que `playwright/no-wait-for-timeout` já impõe.
+- **Lista de sites de documentação removida:** Playwright, Payload, pnpm e GitHub têm skill. Next.js não tem, e o ponteiro expirou de propósito: a regra geral de consultar a doc oficial na versão usada continua, e a doc instalada fica em `node_modules/next/dist/docs` (julgamento nosso: o app é congelado, então a dúvida é rara demais para uma linha sempre carregada).
 - **Configuração por variável de ambiente subiu para "Segurança":** vale também para `scripts/`, não só para os testes.
 - **Ficaram o ciclo de missão e a regra de ouro** (julgamento nosso): são processo estável e valem em toda sessão.
 - **PR aberto com a fila do Dependabot pendente:** decisão do usuário, como nas missões anteriores.
@@ -803,7 +804,13 @@ Em 09/11/2026: Playwright na tag `v1.63.0`: [anotações](https://github.com/mic
 ### Achados
 
 - **Limite do `applyTo`:** segundo a doc do GitHub, JetBrains e Xcode só leem o arquivo geral, então neles as regras movidas não valem. O projeto usa VS Code.
-- **Não verificado em sessão real:** o carregamento das regras novas segue a documentação; regra com escopo só entra quando um arquivo casado é lido ou editado.
+- **Carregamento das regras novas, verificado em parte:** o revisor relatou que `agent-rules.md` entrou no contexto dele ao ler arquivos casados. `tests.md` não foi exercitada, e o Copilot não foi testado; nesses casos vale o que diz a documentação.
+
+### Revisão independente
+
+- **Aplicado:** `.claude/agents/reviewer.md` só apontava para o arquivo geral, e as regras de teste saíram dele. O revisor lê o diff no scratchpad, que não casa com `tests/**`, então poderia não recebê-las. Agora cita `.claude/rules/tests.md`.
+- **Aplicado:** esta seção não dava o destino de tudo o que saiu (`.node-version`, `waitForTimeout` e a lista de sites, inclusive `nextjs.org`, que não tem skill). Registrado nas decisões.
+- **Descartado:** nenhum.
 
 ### Fontes consultadas
 
