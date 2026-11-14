@@ -8,9 +8,9 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Fila do Dependabot (sem issue), concluída: #23, #43, #14, #15, #13 e #16 integrados, um por vez |
-| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 e #45 (P2). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
-| PRs abertos      | Nenhum do Dependabot. Próxima rodada: vitest 4.1.12 (último alerta do `@vitest/mocker`; fora do cooldown, publicada em 15/10), jsdom 31.0.1 e Playwright 1.65.1 (publicados em 13/11, no cooldown até 20/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]` |
+| Missão atual     | Fila do Dependabot, 2ª rodada (sem issue), concluída: #48, #47, #49 e #50 integrados, um por vez |
+| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 (causa achada, falta decidir o `test:int` no CI), #45 e #51 (P2). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
+| PRs abertos      | Nenhum do Dependabot. Próxima rodada: jsdom 31.0.1 e Playwright 1.65.1 (publicados em 13/11, no cooldown até 20/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
@@ -863,3 +863,49 @@ Missão pedida pelo usuário no lugar da #40: avaliar os PRs #13 a #16, #23 e #3
 ### Fontes consultadas
 
 Em 13/11/2026: GitHub: [opções do Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference) (`cooldown`, `open-pull-requests-limit`), [comandos em comentário](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-pull-request-comment-commands), [gerenciar PRs](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/manage-dependabot-prs) e [reexecutar jobs](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/re-run-dependabot-jobs); notas de versão do Playwright 1.65.0 e 1.65.1, React 19.3.0, react-hook-form, jsdom 29 a 31.0.1, dotenv (`CHANGELOG.md`) e cross-env 10.0.0 e 10.1.0; TypeScript [5.8](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-8.html) e [5.9](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html). Datas de publicação pelo `npm view <pacote> time`.
+
+## Fila do Dependabot, 2ª rodada (sem issue)
+
+Quatro majors abertos pelo Dependabot em 14/11, avaliados um por vez. Integrados, nesta ordem: #48 (vitest 5.1.0), #47 (`@vitejs/plugin-react` 6.2.1, que traz o Vite 8.3.6), #49 (`@types/node` 26.6.6) e #50 (`lucide-react` 1.70.0).
+
+### Decisões
+
+- **#48 antes da #40:** fechava os 2 alertas do `@vitest/mocker`, e segurança vem antes de visibilidade. Escolha do usuário.
+- **Depois, o menor número:** os outros três eram majors sem alerta. O #47 também aproveitava a sonda do `test:int`, que acabara de voltar a funcionar.
+- **O #48 não precisou de rebase:** a base já era a `main` atual, então o CI verde valia para aquela head. Os outros três tiveram `@dependabot rebase` e CI novo no SHA da head. Em todos o alvo se manteve.
+- **CI verde não bastou no #47:** o Vite só entra no `test:int`, que o CI não roda (#44). A evidência foi local.
+- **`@types/node` 26:** a versão dos tipos acompanha `major.minor` do Node (README do DefinitelyTyped), e o runtime é 26.13.0. A 26.6.6 é a mais recente publicada (`npm view`): tipos atrás do runtime só deixam de declarar APIs, sem aprovar o que não existe. O `engines` ainda aceita Node 22 (`^22.23.4 || >=24.22.1`), cujos tipos não têm APIs como `URLPattern`, o que virou a #51.
+- **Squash com corpo curto e a evidência**, como na 1ª rodada.
+- **Exceção a "um PR aberto por vez":** PRs do Dependabot ficaram abertos enquanto outro seguia no `/ship-pr`. Autorizado pelo usuário no #48 e mantido na mesma fila.
+
+### Como o RED foi visto
+
+| Alvo                       | Sonda                                                          | Resultado observado                                                                     |
+| -------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `test:int` (#48)           | `main` com vitest 4.1.11, `NODE_ENV=production`, banco migrado | `No such built-in module: node:`, `no tests`; com vitest 5.1.0, o teste passou nas 3 execuções |
+| `test:int` no Vite 8 (#47) | Expectativa mutada para `toBeUndefined`                        | `expected { docs: [], … } to be undefined`; desfeita a mutação, o teste passou nas 3 execuções |
+| Tipos do Node (#49)        | Arquivo temporário com `new URLPattern(...)` no `tsc` da suíte | Compila com 26.6.6; na `main` com 22.19.9, `TS2552: Cannot find name 'URLPattern'` |
+| Ícones (#50)               | `renderToStaticMarkup` dos 7 ícones usados pelo app            | SVG igual nos 7, exceto uma classe a mais no apelido `MoreHorizontal` (`lucide-more-horizontal`, que nenhum CSS de `src/` usa) |
+
+### Achados
+
+- **Causa da #44:** bug do vitest ([vitest#11324](https://github.com/vitest-dev/vitest/issues/11324)). Com jsdom e `NODE_ENV=production`, o Vite resolve o builtin para `__vite-browser-external`, sem o nome, e o vitest 4 monta `node:` + `''`. A correção saiu na 5.0.4 ([#11417](https://github.com/vitest-dev/vitest/pull/11417)), sem backport para a 4.x. Registrado na própria issue. Ela segue aberta para a decisão de rodar o `test:int` no CI.
+- **A falha da #44 exige `NODE_ENV=production`:** é a condição em que a issue foi medida (está no corpo dela). O `pnpm test:int` puro não define a variável e passa na `main` mesmo com vitest 4.1.11, mas não serve: marca o banco como dev (README, "Keep this database in production mode").
+- **Controle fora das condições originais:** meu primeiro controle rodou sem `NODE_ENV=production` e passou na `main`. Isso levaria a fechar a #44 por engano. Pior: o adaptador empurrou o schema e marcou o banco como dev, o efeito que o README avisa. Recuperei com `db:down`, `db:up` e `db:migrate`, e o seed local se perdeu. Uma sonda de controle repete as condições da observação original.
+- **`.env` local defasado:** o Postgres recusou a conexão com `password authentication failed for user "postgres"`, quando o `compose.yaml` cria o usuário `payload`. O `env:check` apontou segredos com menos de 32 caracteres. Os dois sinais batem com os valores do template, inferência feita sem abrir o arquivo. As medições usaram o `.env.example` exportado no processo, que tem precedência sobre o `dotenv`, sem ler nem alterar o `.env`. Cabe ao usuário atualizá-lo.
+- **Sem banco, a #44 não aparece:** o erro surge depois da conexão. Sem Postgres, as duas versões param no mesmo `ECONNREFUSED`.
+- **O `docker-compose.yml` na raiz é o do template** (MongoDB) e o Compose prefere o `compose.yaml`, como diz o comentário dele. Não há o que fazer.
+- **Lucide 1.0:** o `aria-hidden` padrão já vinha na 0.563, e os dois ícones sem texto visível têm `sr-only` no template. Pelo guia de migração do React, a única quebra é a remoção dos ícones de marca, e o app não usa nenhum.
+- **Alertas abertos depois da rodada:** `happy-dom` 2 (high, #20); `esbuild`, `minimatch` e `postcss-selector-parser`, 1 cada (medium); `deepmerge` 1 (low). Os 2 do `@vitest/mocker` fecharam com o #48.
+
+### Revisão independente
+
+- **Aplicado:** a condição `NODE_ENV=production` da #44 não aparecia no resumo, e "repetir as condições originais" citava algo não registrado. Agora há um achado com ela e com a fonte.
+- **Aplicado:** "usuário `postgres`" parecia vir de uma leitura do `.env`, que é bloqueada. Agora cita a origem, o erro do Postgres.
+- **Aplicado:** "SVG idêntico" contradizia a classe a mais. Reescrito, com a verificação de que nenhum CSS de `src/` usa a classe.
+- **Aplicado:** a exceção a "um PR aberto por vez" passou a nomear a regra. O `engines` passou a citar a faixa inteira e o `URLPattern`. A escolha da 26.6.6 ganhou o porquê. Também foram aplicadas as severidades dos alertas, "o teste passou nas 3 execuções" e "fechar a #44 por engano".
+- **Descartado:** nenhum. O revisor não tinha `git` nem `gh`; conferi o que ele deixou em aberto: os 4 corpos de squash, a #51 com `priority: P2` e o comentário na #44.
+
+### Fontes consultadas
+
+Em 14/11/2026: Vitest: [guia de migração na tag v5.1.0](https://github.com/vitest-dev/vitest/blob/v5.1.0/docs/guide/migration/index.md), notas da 5.0.0 a 5.1.0 e 4.1.12, issue [#11324](https://github.com/vitest-dev/vitest/issues/11324) e PRs [#10767](https://github.com/vitest-dev/vitest/pull/10767) e [#11417](https://github.com/vitest-dev/vitest/pull/11417); [CHANGELOG do `@vitejs/plugin-react`](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/CHANGELOG.md), da 4.5.2 à 6.2.1; [README do DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped#how-do-definitely-typed-package-versions-relate-to-versions-of-the-corresponding-library) (versões dos pacotes de tipos); Lucide: notas da [1.0.0](https://github.com/lucide-icons/lucide/releases/tag/1.0.0) e da [1.0.1](https://github.com/lucide-icons/lucide/releases/tag/1.0.1), [versão 1](https://lucide.dev/guide/version-1) e [migração no React](https://lucide.dev/guide/react/migration). Peers, engines e datas pelo `npm view`.
