@@ -8,9 +8,9 @@ Estado do projeto entre chats. Lido no início de cada missão (ver `.github/cop
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | Regras sempre carregadas só com o que é durável e geral (#41), concluída com o merge do PR da missão |
-| Próxima missão   | #40 (P2), a investigação do botão de seed do admin. A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 09/11/2026, a mais recente ainda fixa o Lexical em 0.50.0). Avaliar também a fila do Dependabot, começando pelo #36 |
-| PRs abertos      | Dependabot #13 a #16, #23 e #36, à espera de avaliação um por vez; o #36 substituiu o #24 e sobe o Playwright para 1.64.1; o `check` dele reprova pela sentinela (#21), que indica a imagem a usar, e o `e2e` por `Executable doesn't exist` |
+| Missão atual     | Fila do Dependabot (sem issue), concluída: #23, #43, #14, #15, #13 e #16 integrados, um por vez |
+| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 e #45 (P2). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
+| PRs abertos      | Nenhum do Dependabot. Próxima rodada: vitest 4.1.12 (último alerta do `@vitest/mocker`; fora do cooldown, publicada em 15/10), jsdom 31.0.1 e Playwright 1.65.1 (publicados em 13/11, no cooldown até 20/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
@@ -815,3 +815,51 @@ Em 09/11/2026: Playwright na tag `v1.63.0`: [anotações](https://github.com/mic
 ### Fontes consultadas
 
 Em 10/11/2026: Claude Code: [memória](https://code.claude.com/docs/en/memory) e [boas práticas](https://code.claude.com/docs/en/best-practices); GitHub: [instruções de repositório no IDE](https://docs.github.com/en/copilot/how-tos/copilot-in-your-ide/customize-copilot/configure-custom-instructions/add-repository-instructions-in-your-ide).
+
+## Fila do Dependabot (sem issue)
+
+Missão pedida pelo usuário no lugar da #40: avaliar os PRs #13 a #16, #23 e #36, um por vez. Integrados, nesta ordem: #23 (vitest 4.1.11), #43 (grupo `npm-minor-patch`, que substituiu o #36), #14 (TypeScript 5.9.3), #15 (jsdom 31.0.0), #13 (dotenv 18.0.9) e #16 (cross-env 10.1.0).
+
+### Decisões
+
+- **Verde antigo não vale:** os checks verdes dos PRs eram de 09/11, sobre uma `main` mais velha. Cada PR teve `@dependabot rebase` e CI novo no SHA da head antes do merge.
+- **Ordem:** segurança primeiro (#23 fechava o alerta crítico do vitest), depois o grupo, o minor do TypeScript e os majors. O #15 veio antes dos outros majors porque testava a hipótese do jsdom na falha do `test:int`.
+- **Imagem do Playwright num commit na branch do Dependabot, sem `[dependabot skip]`:** com a marca, o Dependabot volta a rebasear e faz force push por cima, descartando o commit ([doc](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/manage-dependabot-prs#allowing-dependabot-to-rebase-and-force-push-over-extra-commits)). Sem ela, ele para de rebasear, o que é aceitável para um PR que vai a merge em seguida. Nota da skill `github-docs` reescrita para dizer a consequência, não só o efeito.
+- **Playwright 1.65.0, não 1.65.1:** a 1.65.1 estava no cooldown e corrige decorators com campo estático e Bun, que a suíte não usa (YAGNI).
+- **Comentário do `.gitlab-ci.yml` sem número de versão:** a imagem 1.65.0 traz Node 26.13.1 e o `.node-version` fixa 26.13.0; o comentário antigo ("Node 24.20") envelheceu na primeira troca de imagem. O número mora só no `.node-version`.
+- **Corpo do squash curto, com a evidência:** o corpo dos PRs do Dependabot tem até 10 mil caracteres de notas de versão.
+- **O #23 resolveu 3 de 4 alertas do vitest:** o do `@vitest/mocker` pede 4.1.12, e o PR parou na 4.1.11 sem motivo identificado (não é atualização de segurança, pelo corpo do PR). Fica para a próxima rodada do grupo.
+
+### Como o RED foi visto
+
+| Alvo                          | Sonda                                                     | Resultado observado                                                       |
+| ----------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Imagem do CI (#43)            | CI no head do Dependabot, antes do commit da imagem       | `check`: `Use this image in both files`; `e2e`: `Executable doesn't exist` |
+| Imagem do CI (#43), depois    | Commit com a imagem indicada                              | `e2e` 63 passed na imagem 1.65.0; digest conferido com `docker buildx imagetools inspect` |
+| Ambiente `jsdom` (#15)        | Spec temporário de DOM, com cor mutada                    | `Expected "rgb(0, 0, 255)", Received "rgb(255, 0, 0)"`; passa em 28 e 31   |
+| `dotenv/config` (#13)         | `.env` descartável fora do repositório                     | 18.0.9 silencioso com a variável ausente; com `DOTENV_CONFIG_QUIET` vazio, só `injected env (2) from .env` |
+| Aspas no Windows (#16)        | `NODE_OPTIONS` com espaço via `cmd`, mutação sem aspas    | 7.0.3 e 10.1.0 entregam o valor inteiro; sem aspas, os dois cortam em `--no-deprecation` |
+
+### Achados
+
+- **`@dependabot recreate` fechou o #36 sem substituto** ("updatable in another way"), e com os 5 PRs restantes o `open-pull-requests-limit` impediu o grupo de voltar até o merge do #23. Erro meu: o limite devia ter sido lido antes. Resultado bom por acaso: o grupo voltou (#43) sem o rebaixamento da Tailwind.
+- **Cooldown rebaixa no lockfile:** o #36 trazia `tailwindcss` 4.3.5 → 4.3.4, porque a 4.3.5 tinha 3 dias e o cooldown é de 7. Que o cooldown rebaixe é inferência pelas datas; a doc só diz que ele pula versões novas.
+- **Rebase do Dependabot recalcula o alvo:** o #15 passou de jsdom 30.1.3 para 31.0.0 no rebase. Reler título e manifesto depois de cada rebase.
+- **`test:int` quebrado na `main` e fora do CI** (#44): `No such built-in module: node:` com vitest 4.0.18 e 4.1.11, jsdom 28 e 31; passa com `--environment node`. Testar no Node 24 foi bloqueado pelo classificador (binário baixado na hora).
+- **Aviso do `pnpm/action-setup`** sobre layout do pnpm v10 em todo job (#45).
+- **Laço de espera com erro de rede saiu como sucesso:** `gh` vazio caiu no ramo "mudou". O laço agora trata resposta vazia como pendente. O `/ship-pr` já fazia isso.
+- **Sondas que mentem:** uma passou `DOTENV_CONFIG_QUIET` vazio em vez de ausente; outra rodou rotulada "main" com o `node_modules` do PR, porque o comando anterior falhou antes do `git switch`. Controle e a versão impressa pela própria sonda separaram os casos.
+- **Alertas abertos depois da fila:** `happy-dom` 2 (high, #20), `@vitest/mocker` 2, `esbuild`, `minimatch`, `postcss-selector-parser` e `deepmerge`, 1 cada (medium ou low).
+- **Não verificado:** o `.gitlab-ci.yml` com a imagem nova não rodou no GitLab (espelho manual, Missão 6); o envio do formulário de contato (react-hook-form 7.91) não é coberto pela suíte.
+
+### Revisão independente
+
+- **Aplicado:** o comentário do `dependabot.yml` dizia que o `@playwright/test` 1.65.0 "shipped without its playwright-core", e a missão integrou essa versão. Pelas datas do npm, o core saiu cerca de 2 horas depois; o comentário agora conta isso no passado.
+- **Aplicado:** a tabela de estado punha o vitest 4.1.12 no cooldown, mas ele saiu em 15/10. O revisor apontou a contradição; a explicação dele (o cooldown justificaria o #23 parar na 4.1.11) não procede pelo mesmo motivo, então o achado "sem motivo identificado" continua.
+- **Aplicado:** a nota da skill `github-docs` recomendava `@dependabot rebase` sem dizer que ele recalcula o alvo.
+- **Aplicado:** "a 3.93.0" virou "a mais recente, 3.93.0" (conferido com `npm view`); datas em horário local (13/11), como nas outras seções; lembrete de que o próximo grupo com Playwright precisa do commit da imagem.
+- **Descartado:** nenhum.
+
+### Fontes consultadas
+
+Em 13/11/2026: GitHub: [opções do Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference) (`cooldown`, `open-pull-requests-limit`), [comandos em comentário](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-pull-request-comment-commands), [gerenciar PRs](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/manage-dependabot-prs) e [reexecutar jobs](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/manage-your-dependency-security/re-run-dependabot-jobs); notas de versão do Playwright 1.65.0 e 1.65.1, React 19.3.0, react-hook-form, jsdom 29 a 31.0.1, dotenv (`CHANGELOG.md`) e cross-env 10.0.0 e 10.1.0; TypeScript [5.8](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-8.html) e [5.9](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html). Datas de publicação pelo `npm view <pacote> time`.
