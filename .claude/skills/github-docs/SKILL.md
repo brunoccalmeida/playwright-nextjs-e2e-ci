@@ -18,5 +18,6 @@ O GitHub.com não tem versão a fixar: a doc vale para `free-pro-team@latest`. O
 
 - No PowerShell 5.1, aspas duplas dentro de `--jq` chegam quebradas ao `gh`: use o Bash.
 - A doc pode não cobrir o caso. O Dependabot não atualiza imagem em `container:` (inferência da doc somada a um PR real); o `gitleaks-action` varre só o intervalo de commits do evento (lido no código da action).
-- Commit de terceiros em PR do Dependabot faz ele parar de rebasear; a mensagem com `[dependabot skip]` permite sobrescrever.
+- Commit de terceiros em PR do Dependabot faz ele parar de rebasear. Com `[dependabot skip]` na mensagem ele volta a rebasear e faz force push por cima, descartando o commit: não use quando o commit é necessário (ex.: a imagem do Playwright).
+- `@dependabot recreate` num PR agrupado pode fechá-lo sem substituto ("updatable in another way"), e com `open-pull-requests-limit` atingido o grupo só volta quando abrir vaga. Prefira `@dependabot rebase`, que mantém o PR, mas recalcula a versão alvo (jsdom 30.1.3 virou 31.0.0): releia título e manifesto depois.
 - Detecção de licença é medível por branch: `GET /repos/<dono>/<repo>/license?ref=<branch>`; compare o `sha` da resposta com `git rev-parse <branch>:LICENSE`.

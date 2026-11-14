@@ -14,7 +14,8 @@ updates:
       interval: 'weekly'
     versioning-strategy: 'increase'
     # A broken release is usually yanked or fixed within days
-    # (@playwright/test 1.65.0 shipped without its playwright-core)
+    # (@playwright/test 1.65.0 was published ~2 hours before its
+    # playwright-core, so for that window it could not be installed)
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
