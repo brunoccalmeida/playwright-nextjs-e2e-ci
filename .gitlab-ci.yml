@@ -6,7 +6,7 @@ e2e:
   # It runs as root, the image default:
   # the app under test is our own, and root is what the Playwright docs accept
   # for trusted sites.
-  image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+  image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
   services:
     # A new database for every job. The alias is explicit so the hostname does
     # not depend on how the runner derives it from a name with a digest.
@@ -24,7 +24,7 @@ e2e:
     E2E_ADMIN_PASSWORD: password
     PNPM_HOME: /root/.local/share/pnpm
   script:
-    # The image ships Node 24.20, below the "engines" range of package.json.
+    # The image's Node follows Playwright releases, not .node-version.
     # Versions come from the same files GitHub reads: one source of truth.
     - npm install --global "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
     - export PATH="$PNPM_HOME/bin:$PATH"
