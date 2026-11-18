@@ -14,4 +14,5 @@ paths:
 - Dependência nova da suíte entra com versão exata (`pnpm add -D -E`); as do app ficam como o template gerou até um PR de atualização.
 - Script de build de dependência só entra por `allowBuilds`, autorizado por nome depois de revisado.
 - Vulnerabilidade em dependência transitiva: `overrides` em `pnpm-workspace.yaml` para a versão corrigida, sem forçar versão maior.
+- Sem versão corrigida (ou só numa maior), e com o código vulnerável comprovadamente inalcançável: exceção em `audit.ignore` só para aquele GHSA, com o motivo e a condição de saída no comentário e `# expires AAAA-MM-DD, #<issue>` na linha (até 30 dias, conferido por `pnpm check`). Nunca `--ignore-unfixable`, `--audit-level` menor nem `continue-on-error`; o alerta do Dependabot fica aberto.
 - Versão maior é decisão humana: ler as notas de versão e medir o impacto antes de atualizar. Conferir _peer dependencies_ (ex.: `typescript-eslint` limita a versão do TypeScript).
