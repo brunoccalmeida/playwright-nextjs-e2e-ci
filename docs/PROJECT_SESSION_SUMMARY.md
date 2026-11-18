@@ -4,17 +4,20 @@
 
 Estado do projeto entre chats. Lido no início de cada missão (ver `.github/copilot-instructions.md`).
 
+Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro de cada missão (decisões, fontes, RED, revisor) vai no corpo do PR, que o squash grava na `main`. As seções "Missão" abaixo são o histórico anterior.
+
 ## Estado atual
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | #55 (P0), `audit` vermelho pelo GHSA-fc5q-39xc-vjpf (picomatch, sem versão corrigida), concluída: exceção com validade, conferida por `pnpm check` |
+| Missão atual     | #53, adoção do plugin `mission` (brunoccalmeida/automation-template#22), concluída: contratos nas regras, `REVIEW.md`, cópias locais removidas |
 | Exceções do audit | Vencem em 18/12/2026: `happy-dom` (#20) e picomatch (#55). Ao vencer, `pnpm check` reprova: rever o advisory e a issue, renovar a data (até 30 dias) ou remover a entrada |
-| Próxima missão   | Reabrir o PR #54 (#53, plugin `mission`), fechado sem apagar a branch para manter um PR aberto por vez; rebase na `main` (conflito esperado neste arquivo). Depois #40 (P2), a investigação do botão de seed do admin; depois #44 (causa achada, falta decidir o `test:int` no CI), #45 e #51 (P2). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
+| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 (causa achada, falta decidir o `test:int` no CI), #45 e #51 (P2). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
 | PRs abertos      | Nenhum do Dependabot. Próxima rodada: jsdom 31.0.1 e Playwright 1.65.1 (publicados em 13/11, no cooldown até 20/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
+| Plugin `mission` | `/mission:close-mission`, `/mission:ship-pr` e `mission:reviewer`, do marketplace `brunoccalmeida-plugins`, `autoUpdate: false`; cada clone instala uma vez (`/plugin install mission@brunoccalmeida-plugins`) e, se instalar pelo shell, roda `/reload-plugins` na sessão aberta |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
 | Testes           | 62 no build de produção: 4 do template e 58 próprios, em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login (63 no relatório); 8 são `test.fail` (KI-1 a KI-8) |
 

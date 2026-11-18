@@ -36,7 +36,19 @@ Contexto longo degrada a qualidade; cada chat cuida de **uma missão** (uma GitH
 2. Listar issues e PRs abertos (`gh issue list`, `gh pr list`).
 3. Propor a missão de maior prioridade e confirmar com o usuário. Prioridade: bloqueio → segurança → visibilidade → dívida técnica (labels `priority: P0/P1/P2`). No empate, a issue de menor número, porque cada missão se apoia nas anteriores.
 
-**Fechamento** (automático): skill `/close-mission`, a Definition of Done; o registro de sessão vai no PR da própria missão.
+**Fechamento** (automático): skill `/mission:close-mission` (plugin `mission`), a Definition of Done; o registro da missão vai no corpo do PR, e o resumo de sessão guarda só o estado e a próxima missão.
+
+**Contratos** do plugin `mission` ([formato](https://github.com/brunoccalmeida/automation-template/blob/main/plugins/mission/README.md)); a primeira coluna é o nome que as skills procuram:
+
+| Contrato          | Valor                                                                                                                                                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check`           | `pnpm check`                                                                                                                                                                                                                                |
+| `test`            | `pnpm test:e2e` (a suíte do CI); antes, banco novo como no CI e passos do README: `.env` copiado do `.env.example`, `pnpm exec playwright install chromium`, `pnpm db:down`, `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed` e `pnpm build` |
+| `main-branch`     | `main`                                                                                                                                                                                                                                      |
+| `gate`            | `ci-passed`                                                                                                                                                                                                                                 |
+| `session-summary` | `docs/PROJECT_SESSION_SUMMARY.md`                                                                                                                                                                                                           |
+
+`test` não é o `pnpm test`: ele inclui o `test:int`, que o CI não roda e que marca o banco local como dev (README, "Keep this database in production mode"). Revisões específicas do projeto ficam em [REVIEW.md](../REVIEW.md).
 
 ## Gasto de tokens (contexto)
 
@@ -82,7 +94,7 @@ Ao reportar um erro: **erro observado**, **causa raiz**, **análise**, **soluç�
 - Antes de commitar: `pnpm check` verde.
 - **Nada vai direto para a `main`:** o agente commita e faz push em branch própria e abre o PR para a `main`.
 - **Um PR aberto por vez**; trabalho pronto espera em commit local até a fila esvaziar.
-- **Merge só pelo usuário** (skill `/ship-pr`). Nunca `--admin` para furar proteção de branch.
+- **Merge só pelo usuário** (skill `/mission:ship-pr`). Nunca `--admin` para furar proteção de branch.
 - Ruleset, repositório e demais configurações públicas: confirmar com o usuário antes.
 
 ## Princípios

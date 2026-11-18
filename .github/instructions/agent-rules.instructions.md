@@ -10,3 +10,4 @@ applyTo: 'CLAUDE.md,.github/copilot-instructions.md,.claude/rules/**,.github/ins
 - Regra sempre carregada vale para toda sessão e todo agente e não perde a validade: estado do projeto e versões ficam fora.
 - Não repita o que lint/tipos/testes já impõem; regra sem exceção vira lint, teste ou hook.
 - Travas do Claude Code em `.claude/settings.json` (`permissions.deny`): merge `--admin`, force push, push na `main` e leitura/escrita do `.env`. Regra nova vale para `Bash(...)` **e** `PowerShell(...)` e só entra provada por sonda. Elas casam o texto do comando, não são fronteira de segurança: a fronteira é o ruleset da `main` no GitHub.
+- Plugin `mission` (marketplace `brunoccalmeida-plugins`) declarado em `.claude/settings.json` com `"autoUpdate": false`: atualizar de propósito, depois de ler o que mudou. Cada clone instala uma vez (`/plugin install mission@brunoccalmeida-plugins`); comportamento errado do plugin vira issue no `automation-template`, não regra local.
