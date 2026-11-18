@@ -12,11 +12,14 @@ allowBuilds:
 overrides:
   dompurify: 3.4.17
 
-# Accepted risk, tracked in #20. happy-dom comes from @lexical/headless
-# (^20.9.0) and the fix only ships in 21, a major we do not force. It is loaded
-# only by the @lexical/headless/dom export, which neither the app nor any
-# Payload package imports, so the vulnerable code is not reachable.
+# Accepted risks. Each entry expires within 30 days and names its issue, as
+# scripts/check-audit-exceptions.ts enforces: on expiry, review the advisory and
+# the issue, then renew the date or remove the entry.
 audit:
   ignore:
-    - GHSA-834v-8h66-3h79
-    - GHSA-c8p4-j97h-3vg8
+    # happy-dom comes from @lexical/headless (^20.9.0) and the fix only ships in
+    # 21, a major we do not force. It is loaded only by the @lexical/headless/dom
+    # export, which neither the app nor any Payload package imports, so the
+    # vulnerable code is not reachable.
+    - GHSA-834v-8h66-3h79 # expires 2026-12-18, #20
+    - GHSA-c8p4-j97h-3vg8 # expires 2026-12-18, #20
