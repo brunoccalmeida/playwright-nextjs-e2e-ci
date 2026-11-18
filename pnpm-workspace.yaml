@@ -23,3 +23,9 @@ audit:
     # vulnerable code is not reachable.
     - GHSA-834v-8h66-3h79 # expires 2026-12-18, #20
     - GHSA-c8p4-j97h-3vg8 # expires 2026-12-18, #20
+    # picomatch ReDoS, no patched version published. The attacker must supply
+    # the glob pattern; here every pattern comes from project config: tinyglobby
+    # in `payload generate:types`, fast-glob in the next-sitemap postbuild, and
+    # chokidar only in `sass --watch`, with globbing disabled. Remove it once a
+    # fixed picomatch reaches the lockfile.
+    - GHSA-fc5q-39xc-vjpf # expires 2026-12-18, #55
