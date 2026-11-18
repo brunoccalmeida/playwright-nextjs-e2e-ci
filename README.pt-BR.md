@@ -118,13 +118,13 @@ Um experimento com os Playwright Test Agents, incluindo onde eles conflitam com 
 
 Todo pull request roda estes jobs, e o gate `ci-passed` exige todos:
 
-| Job              | O que faz                                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `check`          | Tipos, lint, formatação e as sentinelas do repositório (`pnpm check`)                                            |
-| `audit`          | `pnpm audit --prod --audit-level=high`; as exceções aceitas ficam listadas por advisory em `pnpm-workspace.yaml` |
-| `secret-scan`    | gitleaks nos commits de cada pull request e push                                                                 |
-| `workflow-audit` | zizmor nos workflows                                                                                             |
-| `e2e`            | Migra, faz seed, build, sobe e testa no container oficial do Playwright, com Postgres e segredos novos por job   |
+| Job              | O que faz                                                                                                                                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check`          | Tipos, lint, formatação e as sentinelas do repositório (`pnpm check`)                                                                                                                                                |
+| `audit`          | `pnpm audit --prod --audit-level=high`; as exceções aceitas ficam listadas por advisory em `pnpm-workspace.yaml`, cada uma com issue de acompanhamento e validade de no máximo 30 dias, conferidas pelo `pnpm check` |
+| `secret-scan`    | gitleaks nos commits de cada pull request e push                                                                                                                                                                     |
+| `workflow-audit` | zizmor nos workflows                                                                                                                                                                                                 |
+| `e2e`            | Migra, faz seed, build, sobe e testa no container oficial do Playwright, com Postgres e segredos novos por job                                                                                                       |
 
 Quando o `e2e` falha, o relatório HTML fica anexado à execução como artifact, e o log do servidor fica na saída do passo de teste. O relatório da última execução na `main` que chegou aos testes é publicado em <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
 
