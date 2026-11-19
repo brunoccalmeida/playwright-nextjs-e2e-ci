@@ -4,7 +4,13 @@ import { test as base, expect, type APIRequestContext, type Page } from '@playwr
 import type { z } from 'zod'
 
 import { ADMIN_STATE } from './auth-state'
-import { mutationSchema, pageSchema, postSchema } from './cms-contract'
+import {
+  formSchema,
+  formSubmissionSchema,
+  mutationSchema,
+  pageSchema,
+  postSchema,
+} from './cms-contract'
 import { expectJson } from './expect-json'
 
 type Data = Record<string, unknown>
@@ -50,6 +56,11 @@ export function postData() {
   return { title: `Post ${slug}`, slug, _status: 'published', content: richText(`Body of ${slug}`) }
 }
 
+export function formData() {
+  const title = `Form ${uniqueSlug('form')}`
+  return { title, confirmationMessage: richText(`Thanks from ${title}`) }
+}
+
 /** Creates documents as admin and deletes every one of them afterwards. */
 function tracked<Doc extends { id: number }>(
   admin: APIRequestContext,
@@ -81,6 +92,9 @@ interface CmsFixtures {
   adminRequest: APIRequestContext
   createPage: (overrides?: Data) => Promise<z.infer<typeof pageSchema>>
   createPost: (overrides?: Data) => Promise<z.infer<typeof postSchema>>
+  createForm: (overrides?: Data) => Promise<z.infer<typeof formSchema>>
+  /** Sends a submission to a form, as its contact form does. */
+  submitForm: (formId: number) => Promise<z.infer<typeof formSubmissionSchema>>
   /** A browser with no session: what the public sees, without the admin bar. */
   visitorPage: Page
 }
@@ -105,6 +119,28 @@ export const test = base.extend<CmsFixtures>({
     const posts = tracked(adminRequest, 'posts', postSchema)
     await use((overrides = {}) => posts.create({ ...postData(), ...overrides }))
     await posts.cleanup()
+  },
+
+  createForm: async ({ adminRequest }, use) => {
+    const forms = tracked(adminRequest, 'forms', formSchema)
+    await use((overrides = {}) => forms.create({ ...formData(), ...overrides }))
+    await forms.cleanup()
+  },
+
+  // Depends on createForm only for the teardown order: a fixture is torn down
+  // before the ones it depends on, and a form with submissions cannot be
+  // deleted (docs/KNOWN_ISSUES.md, KI-9). Playwright reads the dependency from
+  // the parameter's destructuring, so the name has to be there, unused.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- only orders the teardown
+  submitForm: async ({ adminRequest, createForm }, use) => {
+    const submissions = tracked(adminRequest, 'form-submissions', formSubmissionSchema)
+    await use((formId) =>
+      submissions.create({
+        form: formId,
+        submissionData: [{ field: 'email', value: 'a@example.com' }],
+      }),
+    )
+    await submissions.cleanup()
   },
 
   visitorPage: async ({ browser, baseURL }, use) => {

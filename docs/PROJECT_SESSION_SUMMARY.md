@@ -10,17 +10,19 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | #57, print do relatório no README atualizado para a execução de 63 testes em `9e7e146`, concluída |
+| Missão atual     | #40, investigação do botão de seed concluída: dois defeitos. KI-9 (formulário com envios não pode ser apagado) é da Payload, já reportado em payloadcms/payload#11177, e ganhou teste; a corrida no seed é do template, sem report, com correção medida (0 de 38 falhas) |
 | Exceções do audit | Vencem em 18/12/2026: `happy-dom` (#20) e picomatch (#55). Ao vencer, `pnpm check` reprova: rever o advisory e a issue, renovar a data (até 30 dias) ou remover a entrada |
-| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 (causa achada, falta decidir o `test:int` no CI), #45, #51 e #58 (P2; #58 é o termo "bugs" nos READMEs e mexe nas regex do `check:readme`). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
-| PRs abertos      | Nenhum do Dependabot. Próxima rodada: jsdom 31.0.1 e Playwright 1.65.1 (publicados em 13/11, no cooldown até 20/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]` |
+| Próxima missão   | #44 (P2; causa achada, falta decidir o `test:int` no CI); depois #45, #51 (agora com a Payload 3.94.0 exigindo Node >= 26.13.1, ver comentário), #58 (mexe nas regex do `check:readme`) e #60 (envio upstream, ação do usuário). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 19/11/2026, a 3.94.0 ainda fixa 0.50.0) |
+| PRs abertos      | Nenhum do Dependabot. Próxima rodada: jsdom 31.0.1 e Playwright 1.65.1 (cooldown até 20/11), Payload 3.94.0 (cooldown até 24/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]`; a Payload 3.94.0 precisa de Node >= 26.13.1 no `.node-version` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
 | Travas do agente | `.claude/settings.json` nega merge `--admin`, force push, push na `main` e leitura/escrita do `.env` (Bash e PowerShell); fronteira real é o ruleset da `main`            |
 | Plugin `mission` | `/mission:close-mission`, `/mission:ship-pr` e `mission:reviewer`, do marketplace `brunoccalmeida-plugins`, `autoUpdate: false`; cada clone instala uma vez (`/plugin install mission@brunoccalmeida-plugins`) e, se instalar pelo shell, roda `/reload-plugins` na sessão aberta |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
-| Testes           | 62 no build de produção: 4 do template e 58 próprios, em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login (63 no relatório); 8 são `test.fail` (KI-1 a KI-8) |
+| Testes           | 65 no build de produção: 4 do template e 61 próprios, em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login (66 no relatório); 9 são `test.fail` (KI-1 a KI-9) |
 | Evidências       | `docs/images/report.png` é da execução em `9e7e146` (63, KI-1 a KI-8); para refazer, abrir `playwright-report/index.html` por `page.goto` com URL `file://` (a partir de `about:blank` o Chromium não carrega arquivos locais) |
+| Upstream pendente | #60: textos prontos para o usuário revisar e enviar (comentário em payloadcms/payload#11177 e report ou PR do seed do template); a reprodução pública exige um repositório publicado pelo usuário |
+| Armadilha local  | Suíte com workers paralelos pode dar `Expected to fail, but passed` no KI-7 (depende da primeira rota que inicializa a Payload): validar com `CI=1` e sem servidor no ar |
 
 ## Plano de missões
 
