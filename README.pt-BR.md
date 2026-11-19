@@ -32,9 +32,9 @@ Este é um projeto pessoal de portfólio, não um trabalho para cliente.
 | Specs que vieram com o template               | 4      | [`admin.e2e.spec.ts`](tests/e2e/admin.e2e.spec.ts), [`frontend.e2e.spec.ts`](tests/e2e/frontend.e2e.spec.ts)                                                     |
 | Setup de login no admin                       | 1      | [`auth.setup.ts`](tests/e2e/auth.setup.ts)                                                                                                                       |
 
-![Relatório HTML do Playwright: 62 aprovados, 0 reprovados, 0 instáveis, 0 ignorados](docs/images/report.png)
+![Relatório HTML do Playwright: 63 aprovados, 0 reprovados, 0 instáveis, 0 ignorados](docs/images/report.png)
 
-_Captura da execução de 62 testes, antes do KI-8._
+_Captura da execução de 63 testes em `9e7e146`, com KI-1 a KI-8: build de produção, banco novo._
 
 ![Execução no GitHub Actions: check, audit, secret-scan, workflow-audit e e2e levando ao ci-passed](docs/images/pipeline-github.png)
 

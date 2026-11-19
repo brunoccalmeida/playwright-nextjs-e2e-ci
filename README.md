@@ -30,9 +30,9 @@ This is a personal portfolio project, not client work.
 | Specs that came with the template         | 4     | [`admin.e2e.spec.ts`](tests/e2e/admin.e2e.spec.ts), [`frontend.e2e.spec.ts`](tests/e2e/frontend.e2e.spec.ts)                                                     |
 | Admin login setup                         | 1     | [`auth.setup.ts`](tests/e2e/auth.setup.ts)                                                                                                                       |
 
-![Playwright HTML report: 62 passed, 0 failed, 0 flaky, 0 skipped](docs/images/report.png)
+![Playwright HTML report: 63 passed, 0 failed, 0 flaky, 0 skipped](docs/images/report.png)
 
-_Screenshot from the 62-test run, before KI-8 was added._
+_Screenshot from the 63-test run at `9e7e146`, with KI-1 to KI-8: production build, fresh database._
 
 ![GitHub Actions run: check, audit, secret-scan, workflow-audit and e2e leading to ci-passed](docs/images/pipeline-github.png)
 
