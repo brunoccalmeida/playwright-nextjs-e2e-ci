@@ -10,9 +10,9 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | #53, adoção do plugin `mission` (brunoccalmeida/automation-template#22), concluída: contratos nas regras, `REVIEW.md`, cópias locais removidas |
+| Missão atual     | #57, print do relatório no README atualizado para a execução de 63 testes em `9e7e146`, concluída |
 | Exceções do audit | Vencem em 18/12/2026: `happy-dom` (#20) e picomatch (#55). Ao vencer, `pnpm check` reprova: rever o advisory e a issue, renovar a data (até 30 dias) ou remover a entrada |
-| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 (causa achada, falta decidir o `test:int` no CI), #45 e #51 (P2). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
+| Próxima missão   | #40 (P2), a investigação do botão de seed do admin; depois #44 (causa achada, falta decidir o `test:int` no CI), #45, #51 e #58 (P2; #58 é o termo "bugs" nos READMEs e mexe nas regex do `check:readme`). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 13/11/2026, a mais recente, 3.93.0, ainda fixa o Lexical em 0.50.0) |
 | PRs abertos      | Nenhum do Dependabot. Próxima rodada: jsdom 31.0.1 e Playwright 1.65.1 (publicados em 13/11, no cooldown até 20/11). O grupo com o Playwright 1.65.1 precisa do commit da imagem nos dois arquivos de CI, sem `[dependabot skip]` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main`           |
@@ -20,6 +20,7 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 | Plugin `mission` | `/mission:close-mission`, `/mission:ship-pr` e `mission:reviewer`, do marketplace `brunoccalmeida-plugins`, `autoUpdate: false`; cada clone instala uma vez (`/plugin install mission@brunoccalmeida-plugins`) e, se instalar pelo shell, roda `/reload-plugins` na sessão aberta |
 | Baseline         | 1º commit da `main` (`f0154df`): app gerado por `create-payload-app@3.93.0 -t website -d postgres`, intacto                                                               |
 | Testes           | 62 no build de produção: 4 do template e 58 próprios, em `api`, `admin`, `chromium`, `mobile` e `reduced-motion`, mais o `setup` de login (63 no relatório); 8 são `test.fail` (KI-1 a KI-8) |
+| Evidências       | `docs/images/report.png` é da execução em `9e7e146` (63, KI-1 a KI-8); para refazer, abrir `playwright-report/index.html` por `page.goto` com URL `file://` (a partir de `about:blank` o Chromium não carrega arquivos locais) |
 
 ## Plano de missões
 
