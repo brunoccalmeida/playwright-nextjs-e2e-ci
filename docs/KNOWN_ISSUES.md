@@ -72,6 +72,15 @@ Issues are numbered in the order they were found.
 - **Impact:** low. The input is still rejected, but the message misleads the visitor about what to fix.
 - **Test:** `a malformed email gets a message about its format`, in `tests/e2e/contact-form.spec.ts`.
 
+## KI-9: A form that has submissions cannot be deleted
+
+- **Observed:** `DELETE /api/forms/:id` on a form with at least one submission returns `500` with `Something went wrong.`. The server log has the Postgres error `23502`: `null value in column "form_id" of relation "form_submissions" violates not-null constraint`. Deleting the submissions first, then the form, works. Measured on every attempt, on this repository and on a new app from `create-payload-app@3.94.0 -t website --db postgres`.
+- **Expected:** the form is deleted, or the request is refused with a `4xx` that says why. Not a server error.
+- **Cause:** the form builder plugin's `form` field on `form-submissions` is a required relationship. The Postgres adapter turns it into a `NOT NULL` column whose foreign key is `ON DELETE SET NULL`, a pair that can never succeed once a row references the form. This is a Payload defect, not one of the template: any required relationship gets the same schema.
+- **Impact:** moderate. Once a visitor has used a form, an admin cannot delete it, and only sees a generic error.
+- **Upstream:** reported as [payloadcms/payload#11177](https://github.com/payloadcms/payload/issues/11177) (open since February 2025); a draft fix is in [payloadcms/payload#15520](https://github.com/payloadcms/payload/pull/15520).
+- **Test:** `deleting a form that has submissions is not a server error`, in `tests/api/forms.spec.ts`.
+
 ## Defects without a test
 
 ### The admin panel's seed button fails on a database that already has data

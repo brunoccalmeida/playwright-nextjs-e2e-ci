@@ -33,6 +33,23 @@ export const postSchema = z.object({
   populatedAuthors: z.array(z.strictObject({ id, name: z.string() })),
 })
 
+export const formSchema = z.object({
+  id,
+  title: z.string().min(1),
+  confirmationType: z.enum(['message', 'redirect']),
+  fields: z.array(z.unknown()),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+})
+
+export const formSubmissionSchema = z.object({
+  id,
+  // Populated on create, an id at depth 0
+  form: z.union([id, formSchema]),
+  submissionData: z.array(z.object({ field: z.string(), value: z.string() })),
+  createdAt: timestamp,
+})
+
 export function paginatedSchema<Doc extends z.ZodType>(doc: Doc) {
   return z.object({
     docs: z.array(doc),

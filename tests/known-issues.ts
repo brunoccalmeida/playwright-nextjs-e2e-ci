@@ -16,6 +16,7 @@ export const knownIssueTitles = {
   'KI-6': 'A newly published post is missing from the posts listing',
   'KI-7': 'REST validation errors lose their field details once the admin panel has loaded first',
   'KI-8': 'A malformed email shows the generic required-field message',
+  'KI-9': 'A form that has submissions cannot be deleted',
 } as const
 
 export type KnownIssueId = keyof typeof knownIssueTitles
