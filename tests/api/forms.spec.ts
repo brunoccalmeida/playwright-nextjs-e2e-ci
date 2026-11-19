@@ -12,6 +12,19 @@ test.describe('REST API /api/forms', () => {
     await expectJson(response, 200, mutationSchema(formSchema))
   })
 
+  // Proves submitForm outside the test.fail below, which would accept it breaking
+  test('stores a submission against its form', async ({ createForm, submitForm }) => {
+    const form = await createForm()
+
+    const submission = await submitForm(form.id)
+
+    // The create response populates the form
+    expect(submission).toMatchObject({
+      form: { id: form.id },
+      submissionData: [{ field: 'email', value: 'a@example.com' }],
+    })
+  })
+
   test.fail(
     'deleting a form that has submissions is not a server error',
     knownIssue('KI-9'),
