@@ -76,7 +76,7 @@ All are in the generated app or its Payload dependency, and each one links to it
 
 ## Run locally
 
-Prerequisites: Docker, the Node.js version in `.node-version`, and pnpm through Corepack (`corepack enable`). The seed downloads its images from GitHub, so it needs internet access.
+Prerequisites: Docker, the Node.js version in `.node-version` (`pnpm install` fails on an older one or another major), and pnpm through Corepack (`corepack enable`). The seed downloads its images from GitHub, so it needs internet access.
 
 ```bash
 pnpm install --frozen-lockfile
