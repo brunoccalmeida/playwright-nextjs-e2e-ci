@@ -111,6 +111,64 @@ jobs:
           # "latest" would let a new audit fail unrelated PRs
           version: 1.32.0
 
+  # The template's Vitest suite, in production mode like the app: migrations,
+  # no schema push. Its own database, as Payload warns against mixing push and
+  # migrations, and a failure here must not hide behind the E2E job.
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        # Same image and digest as the e2e job; a new database for every job
+        image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+        env:
+          POSTGRES_USER: payload
+          POSTGRES_PASSWORD: payload
+          POSTGRES_DB: payload
+        # The job runs on the runner, so the service is reached via a mapped port
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U payload -d payload"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql://payload:payload@localhost:5432/payload
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate disposable secrets
+        run: |
+          for name in PAYLOAD_SECRET CRON_SECRET PREVIEW_SECRET; do
+            value="$(node -p "require('node:crypto').randomBytes(32).toString('hex')")"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      - name: Run migrations
+        run: pnpm db:migrate
+
+      - name: Run integration tests
+        run: pnpm test:int
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -230,7 +288,7 @@ jobs:
   ci-passed:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [check, audit, secret-scan, workflow-audit, e2e]
+    needs: [check, audit, secret-scan, workflow-audit, integration, e2e]
     if: ${{ always() }}
 
     steps:
