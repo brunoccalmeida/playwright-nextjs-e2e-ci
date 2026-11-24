@@ -118,7 +118,7 @@ jobs:
       # Noble, as glibc is required. The tag must match @playwright/test, or the
       # browsers are not found (pnpm check:ci-image reports the image to use).
       # The digest pins the content, a tag can move.
-      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
       # 1001 owns the mounted workspace. --init reaps zombie processes and
       # --ipc=host keeps Chromium from running out of shared memory.
       options: --user 1001 --init --ipc=host
