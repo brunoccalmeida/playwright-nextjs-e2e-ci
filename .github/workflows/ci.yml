@@ -68,6 +68,7 @@ jobs:
         with:
           persist-credentials: false
 
+      # Its v10 layout warning is a known false positive: see the check job.
       - name: Set up pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
@@ -154,6 +155,7 @@ jobs:
         with:
           persist-credentials: false
 
+      # Its v10 layout warning is a known false positive: see the check job.
       - name: Set up pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
@@ -221,6 +223,7 @@ jobs:
         with:
           persist-credentials: false
 
+      # Its v10 layout warning is a known false positive: see the check job.
       - name: Set up pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
