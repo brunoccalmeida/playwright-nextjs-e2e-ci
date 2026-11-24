@@ -10,9 +10,9 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | #44 concluída: o `test:int` roda em modo de produção (o modo em que quebrou), no job `integration` com Postgres próprio, exigido pelo `ci-passed`; localmente deixa de marcar o banco como dev |
+| Missão atual     | #45 concluída: o aviso "pnpm v10 installation layout" é falso positivo do `pnpm/action-setup` v6.1.1 ([upstream #281](https://github.com/pnpm/action-setup/issues/281)); fica explicado num comentário no `ci.yml`, sem contorno |
 | Exceções do audit | Vencem em 18/12/2026: `happy-dom` (#20) e picomatch (#55). Ao vencer, `pnpm check` reprova: rever o advisory e a issue, renovar a data (até 30 dias) ou remover a entrada |
-| Próxima missão   | #45 (P2); depois #51 (a Payload 3.94.0 exige Node >= 26.13.1, ver comentário), #58 (mexe nas regex do `check:readme`), #60 (envio upstream, ação do usuário), #63 (KI-7 instável em execução local paralela) e #64 (refazer screenshot e execução fixada do README com os 6 jobs; precisa de um run da `main` depois do merge da #44). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 19/11/2026, a 3.94.0 ainda fixa 0.50.0) |
+| Próxima missão   | #51 (P2; a Payload 3.94.0 exige Node >= 26.13.1, ver comentário); depois #58 (mexe nas regex do `check:readme`), #60 (envio upstream, ação do usuário), #63 (KI-7 instável em execução local paralela) e #64 (refazer screenshot e execução fixada do README com os 6 jobs). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 19/11/2026, a 3.94.0 ainda fixa 0.50.0) |
 | PRs abertos      | Nenhum. O #62 trouxe Playwright 1.65.1 e jsdom 31.0.1. Próxima rodada do Dependabot: Payload 3.94.0 (cooldown até 24/11), que precisa de Node >= 26.13.1 no `.node-version` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
 | Portões          | Jobs `check`, `audit`, `secret-scan`, `workflow-audit`, `integration` e `e2e`, todos no `needs` do `ci-passed`, único check do ruleset; `publish-report` só em push na `main` |
@@ -23,6 +23,7 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 | Evidências       | `docs/images/report.png` é da execução em `9e7e146` (63, KI-1 a KI-8); para refazer, abrir `playwright-report/index.html` por `page.goto` com URL `file://` (a partir de `about:blank` o Chromium não carrega arquivos locais) |
 | Upstream pendente | #60: textos prontos para o usuário revisar e enviar (comentário em payloadcms/payload#11177 e report ou PR do seed do template); a reprodução pública exige um repositório publicado pelo usuário |
 | Armadilha local  | Suíte com workers paralelos pode dar `Expected to fail, but passed` no KI-7 (depende da primeira rota que inicializa a Payload, #63): por isso o contrato `test` roda com `CI=1` |
+| Ao atualizar `pnpm/action-setup` | Se a release trouxer o [PR #297](https://github.com/pnpm/action-setup/pull/297), conferir nos logs dos 4 jobs que o aviso de layout v10 sumiu e tirar a nota do `ci.yml` no mesmo PR |
 
 ## Plano de missões
 
