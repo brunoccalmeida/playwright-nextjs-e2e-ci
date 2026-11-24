@@ -28,6 +28,17 @@ jobs:
 
       # Reads the exact version from "packageManager" in package.json.
       # Before setup-node, whose pnpm cache needs the pnpm binary.
+      #
+      # Known noise, in every job that uses this action: "[WARN] Detected a
+      # pnpm v10 installation layout at PNPM_HOME". There is no v10 install.
+      # v6.1.1 sets PNPM_HOME to the bootstrap's node_modules/.bin, and the
+      # self-update to our pinned version reads npm's shims there as a v10
+      # layout. The right version is still active. Upstream:
+      # https://github.com/pnpm/action-setup/issues/281, fixed by
+      # https://github.com/pnpm/action-setup/pull/297 (unreleased as of
+      # 2026-11-24). When a release with the fix lands, check the logs for the
+      # warning and drop this note. Not worked around: matching packageManager
+      # to the bootstrap version only skips the self-update by coincidence.
       - name: Set up pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
