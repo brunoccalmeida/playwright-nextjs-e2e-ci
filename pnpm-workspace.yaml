@@ -7,10 +7,10 @@ allowBuilds:
   unrs-resolver: true
 
 # Fail the install when the running Node misses an engines.node range, the
-# project's (pinned to the .node-version line) or a dependency's. pnpm 11.28.9
-# only warns on the project's own engines without it, though the docs say it
-# always fails.
-# https://github.com/pnpm/pnpm.io/blob/main/versioned_docs/version-11.x/settings/cli.md#enginestrict
+# project's (pinned to the .node-version line) or a dependency's. Without it,
+# pnpm only warns, even for the project's own range (the 11.x docs still say
+# that one always fails; fixed in the 12.x docs, pnpm/pnpm#17751).
+# https://github.com/pnpm/pnpm.io/blob/main/docs/settings/cli.md#enginestrict
 engineStrict: true
 
 # monaco-editor pins dompurify exactly, so only an override reaches the patch
