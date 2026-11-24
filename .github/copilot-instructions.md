@@ -40,15 +40,15 @@ Contexto longo degrada a qualidade; cada chat cuida de **uma missão** (uma GitH
 
 **Contratos** do plugin `mission` ([formato](https://github.com/brunoccalmeida/automation-template/blob/main/plugins/mission/README.md)); a primeira coluna é o nome que as skills procuram:
 
-| Contrato          | Valor                                                                                                                                                                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `check`           | `pnpm check`                                                                                                                                                                                                                                |
-| `test`            | `pnpm test:e2e` (a suíte do CI); antes, banco novo como no CI e passos do README: `.env` copiado do `.env.example`, `pnpm exec playwright install chromium`, `pnpm db:down`, `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed` e `pnpm build` |
-| `main-branch`     | `main`                                                                                                                                                                                                                                      |
-| `gate`            | `ci-passed`                                                                                                                                                                                                                                 |
-| `session-summary` | `docs/PROJECT_SESSION_SUMMARY.md`                                                                                                                                                                                                           |
+| Contrato          | Valor                                                                                                                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `check`           | `pnpm check`                                                                                                                                                                                                                                                       |
+| `test`            | `pnpm test` (`test:int` e `test:e2e`, as suítes do CI); antes, banco novo como no CI e passos do README: `.env` copiado do `.env.example`, `pnpm exec playwright install chromium`, `pnpm db:down`, `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed` e `pnpm build` |
+| `main-branch`     | `main`                                                                                                                                                                                                                                                             |
+| `gate`            | `ci-passed`                                                                                                                                                                                                                                                        |
+| `session-summary` | `docs/PROJECT_SESSION_SUMMARY.md`                                                                                                                                                                                                                                  |
 
-`test` não é o `pnpm test`: ele inclui o `test:int`, que o CI não roda e que marca o banco local como dev (README, "Keep this database in production mode"). Revisões específicas do projeto ficam em [REVIEW.md](../REVIEW.md).
+Revisões específicas do projeto ficam em [REVIEW.md](../REVIEW.md).
 
 ## Gasto de tokens (contexto)
 

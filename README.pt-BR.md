@@ -93,7 +93,7 @@ pnpm start
 Abra <http://localhost:3000>. O painel admin fica em <http://localhost:3000/admin>, e o seed cria um login demo: `demo-author@example.com` / `password`.
 
 - **Mantenha esta ordem.** As páginas estáticas são geradas no build, então um seed depois dele deixa `/posts` vazio por até 10 minutos.
-- **Mantenha este banco em modo de produção.** Qualquer outra conexão a ele (`pnpm dev`, `pnpm test:int`, inclusive os [passos de Development do template](docs/PAYLOAD_TEMPLATE_README.md#development)) faz o adaptador Postgres aplicar o schema e marcar o banco como dev. O próximo `pnpm db:migrate` então para num prompt de perda de dados em vez de migrar. Para recuperar, rode `pnpm db:down` e recomece em `pnpm db:up`.
+- **Mantenha este banco em modo de produção.** Qualquer outra conexão a ele (`pnpm dev`, inclusive os [passos de Development do template](docs/PAYLOAD_TEMPLATE_README.md#development)) faz o adaptador Postgres aplicar o schema e marcar o banco como dev. O próximo `pnpm db:migrate` então para num prompt de perda de dados em vez de migrar. Para recuperar, rode `pnpm db:down` e recomece em `pnpm db:up`.
 - **Se o seed falhar, não faça o build ainda.** Um seed que falha pode deixar o banco parcialmente limpo. Rode `pnpm db:seed` de novo antes. Se o build já foi feito, remova `.next` antes de repeti-lo: o `.next/cache` é compartilhado entre builds e guarda o header vazio, mesmo depois de um seed bom.
 - **Recomeçar:** `pnpm db:down` apaga o banco; depois repita a partir de `pnpm db:up`.
 
@@ -106,6 +106,8 @@ pnpm exec playwright install chromium   # uma vez, e depois de cada atualizaçã
 pnpm test:e2e                           # sobe o `pnpm start` ou reutiliza um servidor no ar
 pnpm exec playwright show-report        # abre o relatório HTML
 ```
+
+`pnpm test:int` roda o teste de integração Vitest do template contra o mesmo banco, também em modo de produção, e `pnpm test` roda as duas suítes, como o CI.
 
 Os testes rodam contra o build de produção, então rode `pnpm build` de novo depois de mudar o app. Projetos: `setup` (login no admin), `api` (contrato REST de `/api/pages`, `/api/posts` e `/api/forms`), `admin` (jornada do painel admin ao frontend), `chromium` (desktop), `mobile` (375x812) e `reduced-motion`.
 
@@ -125,6 +127,7 @@ Todo pull request roda estes jobs, e o gate `ci-passed` exige todos:
 | `audit`          | `pnpm audit --prod --audit-level=high`; as exceções aceitas ficam listadas por advisory em `pnpm-workspace.yaml`, cada uma com issue de acompanhamento e validade de no máximo 30 dias, conferidas pelo `pnpm check` |
 | `secret-scan`    | gitleaks nos commits de cada pull request e push                                                                                                                                                                     |
 | `workflow-audit` | zizmor nos workflows                                                                                                                                                                                                 |
+| `integration`    | A suíte Vitest do template (`pnpm test:int`) em modo de produção, depois das migrations, com Postgres e segredos próprios                                                                                            |
 | `e2e`            | Migra, faz seed, build, sobe e testa no container oficial do Playwright, com Postgres e segredos novos por job                                                                                                       |
 
 Quando o `e2e` falha, o relatório HTML fica anexado à execução como artifact, e o log do servidor fica na saída do passo de teste. O relatório da última execução na `main` que chegou aos testes é publicado em <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.

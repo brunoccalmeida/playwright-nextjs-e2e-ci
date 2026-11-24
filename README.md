@@ -91,7 +91,7 @@ pnpm start
 Open <http://localhost:3000>. The admin panel is at <http://localhost:3000/admin>, and the seed creates a demo login: `demo-author@example.com` / `password`.
 
 - **Keep this order.** Static pages are generated during the build, so seeding after it leaves `/posts` empty for up to 10 minutes.
-- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, `pnpm test:int`, including the [template's Development steps](docs/PAYLOAD_TEMPLATE_README.md#development)) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
+- **Keep this database in production mode.** Anything else that connects to it (`pnpm dev`, including the [template's Development steps](docs/PAYLOAD_TEMPLATE_README.md#development)) makes the Postgres adapter push the schema and mark the database as dev. The next `pnpm db:migrate` then stops at a data-loss prompt instead of migrating. To recover, run `pnpm db:down` and start again from `pnpm db:up`.
 - **If the seed fails, do not build yet.** A failed seed can leave the database half cleared. Run `pnpm db:seed` again first. If you already built, remove `.next` before building again: `.next/cache` is shared between builds and keeps the empty header, even after a good seed.
 - **Start over:** `pnpm db:down` deletes the database, then repeat from `pnpm db:up`.
 
@@ -104,6 +104,8 @@ pnpm exec playwright install chromium   # once, and after every Playwright updat
 pnpm test:e2e                           # starts `pnpm start`, or reuses a running server
 pnpm exec playwright show-report        # opens the HTML report
 ```
+
+`pnpm test:int` runs the template's Vitest integration test against the same database, also in production mode, and `pnpm test` runs both suites, as CI does.
 
 The tests run against the production build, so run `pnpm build` again after changing the app. Projects: `setup` (admin login), `api` (REST contract of `/api/pages`, `/api/posts` and `/api/forms`), `admin` (journey from the admin panel to the frontend), `chromium` (desktop), `mobile` (375x812) and `reduced-motion`.
 
@@ -123,6 +125,7 @@ Every pull request runs these jobs, and the `ci-passed` gate requires all of the
 | `audit`          | `pnpm audit --prod --audit-level=high`; accepted exceptions are listed per advisory in `pnpm-workspace.yaml`, each with a tracking issue and an expiry date of at most 30 days that `pnpm check` enforces |
 | `secret-scan`    | gitleaks over the commits of each pull request and push                                                                                                                                                   |
 | `workflow-audit` | zizmor over the workflows                                                                                                                                                                                 |
+| `integration`    | The template's Vitest suite (`pnpm test:int`) in production mode, after the migrations, with its own Postgres and secrets                                                                                 |
 | `e2e`            | Migrate, seed, build, start and test in the official Playwright container, with a new Postgres and secrets per job                                                                                        |
 
 When `e2e` fails, the HTML report is attached to the run as an artifact, and the server log is in the output of the test step. The report of the latest run on `main` that reached the tests is published at <https://brunoccalmeida.github.io/playwright-nextjs-e2e-ci/>.
