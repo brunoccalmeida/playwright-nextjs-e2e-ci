@@ -6,7 +6,7 @@
 
 [English](README.md) | **Português (Brasil)**
 
-Suíte de testes em Playwright + TypeScript para um site Next.js 16 / Payload CMS, executada contra o build de produção e um banco Postgres novo em cada execução do job `e2e`. A aplicação é o [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website) oficial, mantido congelado: defeitos são relatados e fixados por testes, não corrigidos.
+Suíte de testes em Playwright + TypeScript para um site Next.js 16 / Payload CMS, executada contra o build de produção e um banco Postgres novo em cada execução do job `e2e`. A aplicação é o [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website) oficial, mantido congelado: problemas conhecidos são relatados e, quando possível, fixados por testes, não corrigidos.
 
 Este é um projeto pessoal de portfólio, não um trabalho para cliente.
 

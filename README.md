@@ -4,7 +4,7 @@
 
 **English** | [Português (Brasil)](README.pt-BR.md)
 
-A Playwright + TypeScript test suite for a Next.js 16 / Payload CMS website, running against the production build and a brand-new Postgres database on every `e2e` CI job. The application is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website), kept frozen: defects are reported and pinned by tests, not patched.
+A Playwright + TypeScript test suite for a Next.js 16 / Payload CMS website, running against the production build and a brand-new Postgres database on every `e2e` CI job. The application is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/3.x/templates/website), kept frozen: known issues are reported and, where possible, pinned by tests, not patched.
 
 This is a personal portfolio project, not client work.
 
