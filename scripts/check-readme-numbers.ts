@@ -21,7 +21,8 @@ import { knownIssueAnchor, knownIssueTitles, type KnownIssueId } from '../tests/
 interface Facts {
   tests: number
   knownIssues: number
-  bugTests: number
+  untestedIssues: number
+  knownIssueTests: number
 }
 
 interface Readme {
@@ -29,7 +30,7 @@ interface Readme {
   claims: { fact: keyof Facts; pattern: RegExp }[]
   areaTableHeader: string
   // Only the English table repeats the headings; the other one translates them
-  bugTitlesMatchHeadings: boolean
+  issueTitlesMatchHeadings: boolean
   impactLabels: Record<string, string>
 }
 
@@ -39,11 +40,18 @@ const READMES: Readme[] = [
     claims: [
       { fact: 'tests', pattern: /^\| Tests on `main` +\| (\d+),/m },
       { fact: 'tests', pattern: /\*\*About "(\d+) green":/ },
-      { fact: 'knownIssues', pattern: /^\| Bugs found in the app +\| (\d+),/m },
-      { fact: 'bugTests', pattern: /\*\*About "\d+ green":\*\* the (\d+) bug tests/ },
+      { fact: 'knownIssues', pattern: /^\| Known issues in the app +\| (\d+) with a test/m },
+      {
+        fact: 'untestedIssues',
+        pattern: /^\| Known issues in the app +\| \d+ with a test[^|]*, (\d+) without/m,
+      },
+      {
+        fact: 'knownIssueTests',
+        pattern: /\*\*About "\d+ green":\*\* the (\d+) known issue tests/,
+      },
     ],
     areaTableHeader: '| Area ',
-    bugTitlesMatchHeadings: true,
+    issueTitlesMatchHeadings: true,
     impactLabels: { low: 'Low', moderate: 'Moderate' },
   },
   {
@@ -51,11 +59,18 @@ const READMES: Readme[] = [
     claims: [
       { fact: 'tests', pattern: /^\| Testes na `main` +\| (\d+),/m },
       { fact: 'tests', pattern: /\*\*Sobre os "(\d+) verdes":/ },
-      { fact: 'knownIssues', pattern: /^\| Bugs encontrados no app +\| (\d+),/m },
-      { fact: 'bugTests', pattern: /\*\*Sobre os "\d+ verdes":\*\* os (\d+) testes de bug/ },
+      { fact: 'knownIssues', pattern: /^\| Problemas conhecidos no app +\| (\d+) com teste/m },
+      {
+        fact: 'untestedIssues',
+        pattern: /^\| Problemas conhecidos no app +\| \d+ com teste[^|]*, (\d+) sem/m,
+      },
+      {
+        fact: 'knownIssueTests',
+        pattern: /\*\*Sobre os "\d+ verdes":\*\* os (\d+) testes de problemas conhecidos/,
+      },
     ],
     areaTableHeader: '| Área ',
-    bugTitlesMatchHeadings: false,
+    issueTitlesMatchHeadings: false,
     impactLabels: { low: 'Baixo', moderate: 'Moderado' },
   },
 ]
@@ -70,7 +85,7 @@ const specsOf = (suite: JSONReportSuite): JSONReportSpec[] => [
 
 interface ListedTest {
   file: string
-  isBugTest: boolean
+  isKnownIssueTest: boolean
 }
 
 function listTests(): ListedTest[] {
@@ -102,7 +117,7 @@ function listTests(): ListedTest[] {
       return spec.tests.map((test) => ({
         file,
         // In --list nothing ran, so the marker is the only sign of test.fail()
-        isBugTest: test.annotations.some((annotation) => annotation.type === 'fail'),
+        isKnownIssueTest: test.annotations.some((annotation) => annotation.type === 'fail'),
       }))
     })
   } finally {
@@ -170,29 +185,51 @@ function readImpacts(): Map<string, string> {
   return impacts
 }
 
-function checkBugsTable(readme: Readme, markdown: string, impacts: Map<string, string>): string[] {
+// Defects without a test have no KI number, so they are counted by heading
+function countUntestedIssues(): number {
+  const heading = '## Defects without a test'
+  const [, after] = read('docs/KNOWN_ISSUES.md').split(new RegExp(`^${heading}$`, 'm'))
+  if (after === undefined) throw new Error(`docs/KNOWN_ISSUES.md lacks "${heading}"`)
+  // Up to the next section, if one is ever added after it
+  const [section = ''] = after.split(/^## /m)
+  return [...section.matchAll(/^### /gm)].length
+}
+
+function checkKnownIssuesTable(
+  readme: Readme,
+  markdown: string,
+  impacts: Map<string, string>,
+): string[] {
   const rows = tableRows(markdown, '| Id ')
   const ids = Object.keys(knownIssueTitles) as KnownIssueId[]
   const expected = ids.map((id) => `[${id}](docs/KNOWN_ISSUES.md#${knownIssueAnchor(id)})`)
   const actual = rows.map(([link = '']) => link)
 
   const errors = [
-    ...expected.filter((link) => !actual.includes(link)).map((link) => `bugs table lacks ${link}`),
+    ...expected
+      .filter((link) => !actual.includes(link))
+      .map((link) => `known issues table lacks ${link}`),
     ...actual
       .filter((link) => !expected.includes(link))
-      .map((link) => `bugs table has an unknown ${link}`),
+      .map((link) => `known issues table has an unknown ${link}`),
   ]
   ids.forEach((id, index) => {
     const [, title, impact] = rows[index] ?? []
-    if (readme.bugTitlesMatchHeadings && title !== knownIssueTitles[id]) {
-      errors.push(`bugs table, ${id}: title differs from the heading in docs/KNOWN_ISSUES.md`)
+    if (readme.issueTitlesMatchHeadings && title !== knownIssueTitles[id]) {
+      errors.push(
+        `known issues table, ${id}: title differs from the heading in docs/KNOWN_ISSUES.md`,
+      )
     }
     const level = impacts.get(id) ?? ''
     const label = readme.impactLabels[level]
     if (label === undefined) {
-      errors.push(`bugs table, ${id}: no label for the impact "${level}" in docs/KNOWN_ISSUES.md`)
+      errors.push(
+        `known issues table, ${id}: no label for the impact "${level}" in docs/KNOWN_ISSUES.md`,
+      )
     } else if (impact !== label) {
-      errors.push(`bugs table, ${id}: impact should be ${label}, as docs/KNOWN_ISSUES.md says`)
+      errors.push(
+        `known issues table, ${id}: impact should be ${label}, as docs/KNOWN_ISSUES.md says`,
+      )
     }
   })
   return errors
@@ -203,7 +240,8 @@ const impacts = readImpacts()
 const facts: Facts = {
   tests: tests.length,
   knownIssues: Object.keys(knownIssueTitles).length,
-  bugTests: tests.filter((test) => test.isBugTest).length,
+  untestedIssues: countUntestedIssues(),
+  knownIssueTests: tests.filter((test) => test.isKnownIssueTest).length,
 }
 
 for (const readme of READMES) {
@@ -211,7 +249,7 @@ for (const readme of READMES) {
   const errors = [
     ...checkClaims(readme, markdown, facts),
     ...checkAreaTable(readme, markdown, tests),
-    ...checkBugsTable(readme, markdown, impacts),
+    ...checkKnownIssuesTable(readme, markdown, impacts),
   ]
   if (errors.length > 0) {
     console.error(`${readme.file} disagrees with the repository:\n- ${errors.join('\n- ')}`)
