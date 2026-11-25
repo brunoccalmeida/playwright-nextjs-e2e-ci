@@ -10,9 +10,9 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | #51 concluída: `engines.node` é `^26.13.1`, `.node-version` é 26.13.1 e `engineStrict: true` no `pnpm-workspace.yaml` faz a instalação falhar com Node fora da faixa, do projeto ou de dependência (sem ele, o pnpm só avisa, [pnpm/pnpm#17751](https://github.com/pnpm/pnpm/issues/17751)) |
+| Missão atual     | #58 concluída: os READMEs dizem "known issues" (pt-BR: "problemas conhecidos") em vez de "bugs", porque KI-3 a KI-5 não são falhas funcionais, e contam 9 com teste e 1 sem; `check:readme` confere também o número sem teste, contado pelos `###` da seção "Defects without a test" do `docs/KNOWN_ISSUES.md` |
 | Exceções do audit | Vencem em 18/12/2026: `happy-dom` (#20) e picomatch (#55). Ao vencer, `pnpm check` reprova: rever o advisory e a issue, renovar a data (até 30 dias) ou remover a entrada |
-| Próxima missão   | #58 (P2; mexe nas regex do `check:readme`); depois #60 (envio upstream, ação do usuário), #63 (KI-7 instável em execução local paralela), #64 (refazer screenshot e execução fixada do README com os 6 jobs) #67 (`engines.pnpm` promete pnpm 9 e 10) e #68 (README manda `corepack enable`, mas o Node 25+ não traz Corepack; vale fazer junto com a #67). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 24/11/2026, a 3.94.2 ainda fixa 0.50.0) |
+| Próxima missão   | #60 (P2; envio upstream, ação do usuário); depois #63 (KI-7 instável em execução local paralela), #64 (refazer screenshot e execução fixada do README com os 6 jobs) #67 (`engines.pnpm` promete pnpm 9 e 10) e #68 (README manda `corepack enable`, mas o Node 25+ não traz Corepack; vale fazer junto com a #67). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 24/11/2026, a 3.94.2 ainda fixa 0.50.0) |
 | PRs abertos      | Nenhum. Próxima rodada do Dependabot: Payload 3.94.x, que já cabe no Node 26.13.1 fixado pela #51 |
 | Node local       | `engineStrict` recusa instalar com Node diferente da faixa: cada troca do `.node-version` exige atualizar o Node da máquina antes (aqui, `winget upgrade --id OpenJS.NodeJS.LTS --version <x>`), senão `pnpm check` falha no `verifyDepsBeforeRun` |
 | Ambiente local   | `compose.yaml` com `postgres:18`, env validado com zod, migration inicial e seed via Local API; passos no README                                                         |
@@ -25,6 +25,7 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 | Upstream pendente | #60: textos prontos para o usuário revisar e enviar (comentário em payloadcms/payload#11177 e report ou PR do seed do template); a reprodução pública exige um repositório publicado pelo usuário |
 | Armadilha local  | Suíte com workers paralelos pode dar `Expected to fail, but passed` no KI-7 (depende da primeira rota que inicializa a Payload, #63): por isso o contrato `test` roda com `CI=1` |
 | Ao atualizar `pnpm/action-setup` | Se a release trouxer o [PR #297](https://github.com/pnpm/action-setup/pull/297), conferir nos logs dos 4 jobs que o aviso de layout v10 sumiu e tirar a nota do `ci.yml` no mesmo PR |
+| Frases do `check:readme` | Mudar o texto de uma afirmação conferida nos READMEs exige mudar a regex em `scripts/check-readme-numbers.ts` junto; regex que não acha a frase reprova com "no longer finds" |
 
 ## Plano de missões
 
