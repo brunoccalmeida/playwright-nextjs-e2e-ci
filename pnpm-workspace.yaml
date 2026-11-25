@@ -6,6 +6,13 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 
+# Fail the install when the running Node misses an engines.node range, the
+# project's (pinned to the .node-version line) or a dependency's. Without it,
+# pnpm only warns, even for the project's own range (the 11.x docs still say
+# that one always fails; fixed in the 12.x docs, pnpm/pnpm#17751).
+# https://github.com/pnpm/pnpm.io/blob/main/docs/settings/cli.md#enginestrict
+engineStrict: true
+
 # monaco-editor pins dompurify exactly, so only an override reaches the patch
 # that fixes GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr. Remove it once a
 # monaco-editor release depends on >=3.4.17.

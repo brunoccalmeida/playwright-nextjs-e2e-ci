@@ -78,7 +78,7 @@ Todos estão no app gerado ou na dependência Payload, e cada um leva ao relato 
 
 ## Rodar localmente
 
-Pré-requisitos: Docker, a versão do Node.js em `.node-version` e pnpm via Corepack (`corepack enable`). O seed baixa as imagens do GitHub, então precisa de internet.
+Pré-requisitos: Docker, a versão do Node.js em `.node-version` (o `pnpm install` falha com uma mais antiga ou de outra major) e pnpm via Corepack (`corepack enable`). O seed baixa as imagens do GitHub, então precisa de internet.
 
 ```bash
 pnpm install --frozen-lockfile
