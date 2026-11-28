@@ -36,7 +36,7 @@ Este é um projeto pessoal de portfólio, não um trabalho para cliente.
 
 _Captura da execução de 63 testes em `9e7e146`, com KI-1 a KI-8: build de produção, banco novo._
 
-![Execução no GitHub Actions: check, audit, secret-scan, workflow-audit e e2e levando ao ci-passed](docs/images/pipeline-github.png)
+![Execução no GitHub Actions em `3db055c`: check, audit, secret-scan, workflow-audit, integration e e2e levando ao ci-passed, e e2e levando ao publish-report](docs/images/pipeline-github.png)
 
 ## Como isto atende a um briefing de cliente
 

@@ -34,7 +34,7 @@ This is a personal portfolio project, not client work.
 
 _Screenshot from the 63-test run at `9e7e146`, with KI-1 to KI-8: production build, fresh database._
 
-![GitHub Actions run: check, audit, secret-scan, workflow-audit and e2e leading to ci-passed](docs/images/pipeline-github.png)
+![GitHub Actions run at `3db055c`: check, audit, secret-scan, workflow-audit, integration and e2e leading to ci-passed, and e2e leading to publish-report](docs/images/pipeline-github.png)
 
 ## How this maps to a client brief
 
