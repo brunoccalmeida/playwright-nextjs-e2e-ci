@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 
 import type { JSONReport, JSONReportSpec, JSONReportSuite } from '@playwright/test/reporter'
 import { parse } from 'dotenv'
+import { parse as parseYaml } from 'yaml'
 
 import { knownIssueAnchor, knownIssueTitles, type KnownIssueId } from '../tests/known-issues'
 
@@ -23,6 +24,7 @@ interface Facts {
   knownIssues: number
   untestedIssues: number
   knownIssueTests: number
+  pipelineJobs: number
 }
 
 interface Readme {
@@ -49,6 +51,10 @@ const READMES: Readme[] = [
         fact: 'knownIssueTests',
         pattern: /\*\*About "\d+ green":\*\* the (\d+) known issue tests/,
       },
+      {
+        fact: 'pipelineJobs',
+        pattern: /^\| Pipeline +\| (\d+) jobs behind one required `ci-passed` gate/m,
+      },
     ],
     areaTableHeader: '| Area ',
     issueTitlesMatchHeadings: true,
@@ -67,6 +73,10 @@ const READMES: Readme[] = [
       {
         fact: 'knownIssueTests',
         pattern: /\*\*Sobre os "\d+ verdes":\*\* os (\d+) testes de problemas conhecidos/,
+      },
+      {
+        fact: 'pipelineJobs',
+        pattern: /^\| Pipeline +\| (\d+) jobs atrás de um único gate obrigatório, `ci-passed`/m,
       },
     ],
     areaTableHeader: '| Área ',
@@ -235,6 +245,19 @@ function checkKnownIssuesTable(
   return errors
 }
 
+// The README counts the jobs the required gate waits for, not the gate itself
+function countGateJobs(): number {
+  const workflow = '.github/workflows/ci.yml'
+  const parsed: unknown = parseYaml(read(workflow))
+  const needs: unknown = (parsed as { jobs?: Record<string, { needs?: unknown }> } | null)?.jobs?.[
+    'ci-passed'
+  ]?.needs
+  if (!Array.isArray(needs) || needs.length === 0) {
+    throw new Error(`${workflow} lacks a non-empty needs list in the ci-passed job`)
+  }
+  return needs.length
+}
+
 const tests = listTests()
 const impacts = readImpacts()
 const facts: Facts = {
@@ -242,6 +265,7 @@ const facts: Facts = {
   knownIssues: Object.keys(knownIssueTitles).length,
   untestedIssues: countUntestedIssues(),
   knownIssueTests: tests.filter((test) => test.isKnownIssueTest).length,
+  pipelineJobs: countGateJobs(),
 }
 
 for (const readme of READMES) {
