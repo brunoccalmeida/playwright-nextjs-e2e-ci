@@ -76,7 +76,7 @@ All are in the generated app or its Payload dependency, and each one links to it
 
 ## Run locally
 
-Prerequisites: Docker, the Node.js version in `.node-version` (`pnpm install` fails on an older one or another major), and pnpm through Corepack (`corepack enable`). The seed downloads its images from GitHub, so it needs internet access.
+Prerequisites: Docker, the Node.js version in `.node-version` (`pnpm install` fails on an older one or another major), and pnpm 11, installed with npm: `npm install --global pnpm@latest-11` ([pnpm 11 installation](https://github.com/pnpm/pnpm.io/blob/main/versioned_docs/version-11.x/installation.md); pnpm then runs the exact version pinned in `packageManager`). Node 25 and later [no longer ship Corepack](https://nodejs.org/en/blog/release/v25.0.0), so `corepack enable` does not work there. The seed downloads its images from GitHub, so it needs internet access.
 
 ```bash
 pnpm install --frozen-lockfile
