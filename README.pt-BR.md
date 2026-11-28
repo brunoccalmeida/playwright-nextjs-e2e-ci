@@ -109,6 +109,8 @@ pnpm exec playwright show-report        # abre o relatório HTML
 
 `pnpm test:int` roda o teste de integração Vitest do template contra o mesmo banco, também em modo de produção, e `pnpm test` roda as duas suítes, como o CI.
 
+Um servidor reutilizado guarda o estado de quem o usou primeiro. O teste do [KI-7](docs/KNOWN_ISSUES.md#ki-7-rest-validation-errors-lose-their-field-details-once-the-admin-panel-has-loaded-first) só se mantém quando o admin inicializou a Payload primeiro: o servidor novo do `pnpm test:e2e` garante isso, mas um servidor que atendeu antes uma rota `/api` dá "Expected to fail, but passed" nesse teste.
+
 Os testes rodam contra o build de produção, então rode `pnpm build` de novo depois de mudar o app. Projetos: `setup` (login no admin), `api` (contrato REST de `/api/pages`, `/api/posts` e `/api/forms`), `admin` (jornada do painel admin ao frontend), `chromium` (desktop), `mobile` (375x812) e `reduced-motion`.
 
 A suíte entra com `E2E_ADMIN_EMAIL` e `E2E_ADMIN_PASSWORD`. Um `.env` criado antes de essas variáveis entrarem no `.env.example` precisa das duas linhas, e sem elas a execução para na inicialização.

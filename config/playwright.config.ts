@@ -76,7 +76,12 @@ export default defineConfig({
   webServer: {
     command: 'pnpm start',
     cwd: '..',
-    url: baseURL,
+    // The readiness check is the first request the server answers, and no
+    // test starts before it does. Pointing it at the admin makes the admin
+    // initialize Payload first in every run, which KI-7's test depends on:
+    // with parallel workers, an /api request could otherwise win that race.
+    // A reused server keeps whatever order it was first hit in.
+    url: new URL('/admin', baseURL).href,
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
   },

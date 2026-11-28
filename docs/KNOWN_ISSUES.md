@@ -62,7 +62,7 @@ Issues are numbered in the order they were found.
 - **Expected:** the error body does not depend on which route was requested first, and clients can map each error to its field.
 - **Cause:** `formatErrors` in `payload/dist/utilities/formatErrors.js` only keeps `name` and `data` when `incoming instanceof ValidationError`. The likely reason it is false is that the admin and API routes get separate bundled copies of the class. The dependence on the first route is measured; the separate copies are inferred.
 - **Impact:** low. The status and the summary message stay correct, but a REST client cannot highlight individual fields.
-- **Test:** `a validation error details each invalid field`, in `tests/api/pages.spec.ts`.
+- **Test:** `a validation error details each invalid field`, in `tests/api/pages.spec.ts`. It depends on the admin initializing Payload first. `config/playwright.config.ts` enforces that order: the `webServer` readiness check requests `/admin`, and no test starts before that request is answered. A server that is already running and is reused keeps the order it was first hit in.
 
 ## KI-8: A malformed email shows the generic required-field message
 
