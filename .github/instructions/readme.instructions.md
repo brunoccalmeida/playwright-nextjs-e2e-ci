@@ -6,7 +6,7 @@ applyTo: 'README*.md'
 
 # Números e evidências dos READMEs
 
-Os dois idiomas mudam juntos. `pnpm check:readme` confere o que o repositório sabe responder: total de testes, soma por área, quantidade de known issues, com e sem teste, testes com `test.fail` e linhas da tabela de known issues.
+Os dois idiomas mudam juntos. `pnpm check:readme` confere o que o repositório sabe responder: total de testes, soma por área, quantidade de known issues, com e sem teste, testes com `test.fail`, linhas da tabela de known issues e o número de jobs na linha "Pipeline", contra o `needs` do job `ci-passed`.
 
 O restante é manual, porque descreve um momento passado ou depende de serviço externo. Fica honesto enquanto o texto disser de quando é:
 
