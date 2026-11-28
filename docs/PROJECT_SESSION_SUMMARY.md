@@ -10,7 +10,7 @@ Desde a #53, este arquivo guarda só o estado e a próxima missão; o registro d
 
 | Item             | Estado                                                                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missão atual     | #64 concluída: `docs/images/pipeline-github.png` e o texto alternativo dos dois READMEs mostram a execução em `3db055c` (6 jobs no gate, mais `publish-report`), a mesma da linha "Pipeline" |
+| Missão atual     | #64 concluída: `docs/images/pipeline-github.png` e o texto alternativo dos dois READMEs mostram a execução em `3db055c` (6 jobs no gate, mais `publish-report`), a mesma da linha "Pipeline"; a linha "GitHub Actions ou GitLab CI" também passou a apontar para ela, e a linha "CI que barra merges ruins" agora cita os testes de integração |
 | Exceções do audit | Vencem em 18/12/2026: `happy-dom` (#20) e picomatch (#55). Ao vencer, `pnpm check` reprova: rever o advisory e a issue, renovar a data (até 30 dias) ou remover a entrada |
 | Próxima missão   | #67 (P2; `engines.pnpm` promete pnpm 9 e 10), junto com a #68 (README manda `corepack enable`, mas o Node 25+ não traz Corepack); depois #71 (sentinela do número de jobs do pipeline no README). A #20 segue bloqueada até uma Payload com Lexical >= 0.53.0 (em 24/11/2026, a 3.94.2 ainda fixa 0.50.0) |
 | PRs abertos      | Nenhum. Próxima rodada do Dependabot: Payload 3.94.x, que já cabe no Node 26.13.1 fixado pela #51 |
